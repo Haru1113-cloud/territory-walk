@@ -12,7 +12,6 @@ import '../state/tera_walk_controller.dart';
 import 'app_style.dart';
 import 'badge_chip_row.dart';
 import 'format.dart';
-import 'mode_toggle.dart';
 
 class ControlPanel extends StatelessWidget {
   const ControlPanel({super.key});
@@ -52,8 +51,6 @@ class ControlPanel extends StatelessWidget {
               _DistanceHero(controller: controller),
               const SizedBox(height: 12),
               const BadgeChipRow(),
-              const SizedBox(height: 12),
-              const ModeToggle(),
               const SizedBox(height: 12),
               Row(
                 children: [

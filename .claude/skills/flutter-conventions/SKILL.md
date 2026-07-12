@@ -59,7 +59,6 @@ lib/
 └── widgets/                     screens内で使う部品
     ├── app_style.dart            配色などの共通スタイル値（AppColors）
     ├── format.dart                距離・面積の表示用フォーマット関数
-    ├── mode_toggle.dart          テスト/GPSモード切替
     ├── control_panel.dart        スタート/ストップ・輪を閉じるボタン
     └── territory_map.dart        flutter_map本体（軌跡・領土ポリゴンの描画）
 ```
@@ -145,7 +144,6 @@ lib/
 | 領土（確定済み） | `territory` / `Territory` |
 | 輪が閉じる | `closeLoop` |
 | 合計獲得面積 | `totalAreaSquareMeters` |
-| GPSモード / テストモード | `TrackingMode.gps` / `TrackingMode.test` |
 
 ## コメント方針
 

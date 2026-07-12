@@ -22,8 +22,6 @@ import '../storage/badge_repository.dart';
 import '../storage/territory_repository.dart';
 import '../storage/walk_history_repository.dart';
 
-enum TrackingMode { test, gps }
-
 class TeraWalkController extends ChangeNotifier {
   TeraWalkController({
     LocationService? locationService,
@@ -46,7 +44,6 @@ class TeraWalkController extends ChangeNotifier {
   final BadgeRepository _badgeRepository;
   StreamSubscription<TrackPoint>? _gpsSubscription;
 
-  TrackingMode mode = TrackingMode.test;
   bool isTracking = false;
 
   final List<TrackPoint> trail = [];
@@ -109,23 +106,13 @@ class TeraWalkController extends ChangeNotifier {
     newlyClosedTerritoryAreas.clear();
   }
 
-  /// モードを切り替える。記録中は切り替えられない。
-  void setMode(TrackingMode newMode) {
-    if (isTracking) return;
-    mode = newMode;
-    notifyListeners();
-  }
-
-  /// 記録を開始する。GPSモードなら現在地の監視も開始する。
+  /// 記録を開始する。現在地の監視を開始する。
   Future<void> start() async {
     if (isTracking) return;
 
-    if (mode == TrackingMode.gps) {
-      final granted = await _locationService.ensurePermission();
-      if (!granted) return;
-      _gpsSubscription =
-          _locationService.watchPosition().listen(_tryAddPoint);
-    }
+    final granted = await _locationService.ensurePermission();
+    if (!granted) return;
+    _gpsSubscription = _locationService.watchPosition().listen(_tryAddPoint);
 
     isTracking = true;
     trail.clear();
@@ -184,12 +171,6 @@ class TeraWalkController extends ChangeNotifier {
     _badgeRepository.save(unlockedBadgeIds);
   }
 
-  /// テストモード: 地図タップで軌跡ポイントを追加する。
-  void addTestPoint(double lat, double lng) {
-    if (!isTracking || mode != TrackingMode.test) return;
-    _tryAddPoint(TrackPoint(lat: lat, lng: lng, capturedAt: DateTime.now()));
-  }
-
   void _tryAddPoint(TrackPoint point) {
     // ブレ除去フィルタはsessionRouteを基準にする。trailは輪が閉じるたびに
     // リセットされるため、それを基準にすると閉じた直後だけフィルタが
@@ -207,7 +188,7 @@ class TeraWalkController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 輪を手動で閉じる(テストモードで、歩いて戻らずに確定させたい場合に使う)。
+  /// 輪を手動で閉じる(歩いて戻らずに確定させたい場合に使う)。
   void closeLoopManually() {
     if (!isTracking) return;
     _closeLoop();

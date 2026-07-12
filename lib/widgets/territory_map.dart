@@ -26,9 +26,6 @@ class TerritoryMap extends StatelessWidget {
       options: MapOptions(
         initialCenter: _defaultCenter,
         initialZoom: 17,
-        onTap: (tapPosition, point) {
-          controller.addTestPoint(point.latitude, point.longitude);
-        },
       ),
       children: [
         // CARTOのDark Matter(ラベルなし版)。「情報を伝える地図」ではなく
@@ -43,7 +40,7 @@ class TerritoryMap extends StatelessWidget {
         ),
         PolygonLayer(polygons: _buildTerritoryPolygons(controller)),
         PolylineLayer(polylines: _buildTrailPolylines(controller)),
-        if (controller.mode == TrackingMode.gps && controller.trail.isNotEmpty)
+        if (controller.trail.isNotEmpty)
           MarkerLayer(markers: [_buildCurrentLocationMarker(controller)]),
       ],
     );
