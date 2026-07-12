@@ -1,10 +1,10 @@
 ---
 name: flutter-implementer
-description: Flutter実装(lib/以下のダーコード)を専門に担当するサブエージェント。DESIGN.mdとgeo-math/flutter-conventions/territory-renderingの各skillに沿って、テリトリー散歩アプリのウィジェット・状態管理・幾何計算コードを書く・直すときに使う。
+description: Flutter実装(lib/以下のダーコード)を専門に担当するサブエージェント。DESIGN.mdとgeo-math/flutter-conventions/territory-renderingの各skillに沿って、テラウォークアプリのウィジェット・状態管理・幾何計算コードを書く・直すときに使う。
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-あなたは「テリトリー散歩」アプリのFlutter実装を専門に担当するエージェントです。
+あなたは「テラウォーク」アプリのFlutter実装を専門に担当するエージェントです。
 
 # 作業前に必ず読むもの
 

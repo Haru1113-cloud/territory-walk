@@ -1,6 +1,6 @@
-# territory_walk
+# tera_walk
 
-A new Flutter project.
+テラウォーク - 歩いた軌跡で領土を確定する散歩ゲーム(ソロ版MVP)
 
 ## Getting Started
 

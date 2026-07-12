@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../state/territory_walk_controller.dart';
+import '../state/tera_walk_controller.dart';
 import 'app_style.dart';
 
 class ModeToggle extends StatelessWidget {
@@ -12,15 +12,15 @@ class ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<TerritoryWalkController>();
+    final controller = context.watch<TeraWalkController>();
 
     return SegmentedButton<TrackingMode>(
       style: SegmentedButton.styleFrom(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppColors.radiusSmall),
         ),
-        selectedBackgroundColor: AppColors.primary,
-        selectedForegroundColor: Colors.white,
+        selectedBackgroundColor: AppColors.trail,
+        selectedForegroundColor: AppColors.onAccent,
         foregroundColor: AppColors.ink,
         side: const BorderSide(color: AppColors.border, width: 1.5),
         textStyle: const TextStyle(fontWeight: FontWeight.w700),

@@ -1,4 +1,4 @@
-# テリトリー散歩（仮） 設計書
+# テラウォーク 設計書
 
 ## 1. 概要
 
@@ -16,27 +16,50 @@
 （詳細は6章）。ただし、それらを将来足すときに大きな作り直しが要らない
 程度には、データの持ち方を意識しておく。
 
+## 1.5. ビジュアルデザインの方針
+
+「情報を伝える地図アプリ」ではなく「探検する舞台としてのゲーム」に
+見えることを目指し、暗い背景の上にアクセントカラーがネオンのように
+光る、ダーク×グローのトーンを採用している（2026-07にユーザー要望で
+それまでのライトテーマから全面刷新）。配色トークンの一覧・使い分け・
+グロー表現の実装方法は`.claude/skills/territory-rendering/SKILL.md`に
+集約してあるので、そちらを一次情報とする（ここでは重複記載しない）。
+新しく画面や部品を追加するときも、色は必ず`lib/widgets/app_style.dart`の
+`AppColors`を経由し、色コードを直接書かないこと。
+
 ## 2. 画面構成
 
-今回は **1画面構成**（`WalkScreen` 1つ）で全機能を提供する。
+メイン画面（`WalkScreen`）に加え、振り返り機能のために画面遷移を導入した。
+`Navigator.push`によるシンプルなpush遷移のみで、named routesやgo_router等の
+仕組みは導入しない（画面数がまだ少なく、過剰実装になるため）。
 
 ```
-WalkScreen
+WalkScreen（メイン画面）
 ├── TerritoryMap（地図本体。軌跡・領土ポリゴン・現在地マーカーを描画）
-└── ControlPanel（オーバーレイ。モード切替・スタート/ストップ・
-                   輪を閉じる・合計面積表示）
-    ├── ModeToggle（テスト/GPS切替）
-    └── 統計表示（軌跡ポイント数・領土件数・合計面積）
+├── TerritoryGainToast（画面上部。輪が閉じた瞬間の獲得演出、数秒で自動的に消える）
+├── ControlPanel（下部ボトムシート。今回の距離＋獲得済みバッジのチップ＋
+│                 モード切替・スタート/ストップ・輪を閉じる）
+└── AppBarのアイコンから → HistoryScreen（散歩記録の一覧）
+                              → タップ → HistoryDetailScreen（1件の詳細地図）
+                           → BadgeScreen（バッジ一覧。全件の解除状況を確認できる）
 ```
 
-理由: MVPは機能を検証する段階であり、画面遷移（履歴画面・設定画面など）を
-先に作ると本質でない実装が増える。1画面に情報を集約した方が、プロトタイプ
-（同じく1画面）からの移植もしやすい。
+獲得演出・バッジ解除通知は、Controllerに「1回限りの通知リスト」
+（`newlyClosedTerritoryAreas`/`newlyUnlockedBadges`）を持たせ、UIがそれを
+監視して表示後にクリアする、という同じパターンで統一している（詳細は
+`flutter-conventions` skill）。Streamや通知パッケージのような新しい依存は
+増やしていない。バッジは一覧画面に行かなくても`ControlPanel`のチップで
+常に確認できるようにした（ユーザー要望）。
 
-将来の拡張を見据え、`WalkScreen` は「地図」と「操作パネル」を別ウィジェットに
-分けておく。これにより、将来 履歴画面・領土一覧画面などを追加する際に
-`TerritoryMap` をそのまま再利用できる（Navigatorでの画面遷移を後から足しても
-既存コードへの影響が小さい）。
+理由: 「日付一覧→タップして詳細地図」という2段階構成がユーザー要望であり、
+実装コストと機能のバランスが良い。`WalkScreen`が「地図」と「操作パネル」を
+別ウィジェットに分けてあったため、`TerritoryMap`のようなマップ描画部品を
+`HistoryDetailScreen`でも再利用しやすかった（フェーズ1の設計判断が活きた形）。
+
+バッジ一覧（`BadgeScreen`）も同様にAppBarのアイコンから`Navigator.push`で
+遷移する、独立した1画面として追加した。バッジ獲得の**通知**（トースト）は
+画面遷移ではなく`WalkScreen`上でのSnackBar表示にしている。理由はアーキテクチャの
+節を参照。
 
 ## 3. データモデル
 
@@ -56,40 +79,71 @@ class Territory {
   final double areaSquareMeters;
   final DateTime closedAt;
 }
-```
 
-合計面積（`totalAreaSquareMeters`）は `Territory` の配列から都度合計すれば
-求まるため、独立した型は用意しない。永続化する値は以下の2つのみ。
-
-```dart
-// 永続化の対象（lib/storage/territory_repository.dart が扱う形）
-{
-  "territories": [ /* Territoryのリスト（points, areaSquareMeters, closedAt） */ ],
+// lib/models/walk_record.dart
+// 1回の散歩(スタート〜ストップ)の記録。振り返り画面・バッジ判定の両方で使う。
+class WalkRecord {
+  final DateTime startedAt;
+  final double distanceMeters;
+  final double areaSquareMeters;   // その散歩で獲得した面積(なければ0)
+  final List<TrackPoint> route;    // 振り返り画面での再描画用
 }
 ```
 
-理由: 合計面積そのものを別途保存すると、`territories` との整合性が壊れる
-リスクがある（保存し忘れ・計算式変更時の不整合等）。常に `territories` から
-導出する一本の真実（single source of truth）にした方がシンプルで壊れにくい。
+合計面積（`totalAreaSquareMeters`）は `Territory` の配列から都度合計すれば
+求まるため、独立した型は用意しない。同様に、バッジの達成条件判定に使う
+「累計距離」「活動日数」なども`walkHistory`（`WalkRecord`の配列）から
+都度計算する値であり、別途保存しない。永続化する値は以下の3つ。
 
-現在記録中の軌跡（`List<TrackPoint>`）は永続化しない。アプリを再起動したら
-「歩いている途中の輪」は失われてよい仕様とする（MVPスコープでは許容範囲、
-かつ実装がシンプルになる）。
+```dart
+// 永続化の対象
+// lib/storage/territory_repository.dart
+{ "territories": [ /* Territoryのリスト */ ] }
+
+// lib/storage/walk_history_repository.dart
+{ "walk_history": [ /* WalkRecordのリスト */ ] }
+
+// lib/storage/badge_repository.dart
+{ "unlocked_badge_ids": [ /* 解除済みバッジIDの配列 */ ] }
+```
+
+理由: 合計面積・累計距離・活動日数などの「集計値」そのものを別途保存すると、
+元データ（`territories`/`walkHistory`）との整合性が壊れるリスクがある
+（保存し忘れ・計算式変更時の不整合等）。常に元データから導出する一本の
+真実（single source of truth）にした方がシンプルで壊れにくい。バッジは
+「バッジの中身（タイトル・アイコン・条件）」と「解除済みかどうか」を
+分離し、解除済みIDだけを保存する（中身は`badge_definitions.dart`が
+常に最新を持つ）。
+
+現在記録中の軌跡（`trail`/`sessionRoute`）は散歩の途中では永続化しない。
+ストップした時点で初めて`WalkRecord`として保存する（MVPスコープでは
+「アプリを再起動したら歩いている途中の記録は失われる」ことを許容する）。
 
 ## 4. アーキテクチャ
 
-- **状態管理**: `provider`パッケージ。単一の `TerritoryWalkController`
-  （`ChangeNotifier`）にモード・記録中軌跡・確定済み領土・合計面積をまとめる。
+- **状態管理**: `provider`パッケージ。単一の `TeraWalkController`
+  （`ChangeNotifier`）にモード・記録中軌跡・確定済み領土・合計面積・
+  散歩履歴・バッジの解除状況をまとめる。
   理由: 画面数もロジックの複雑さも小さいMVPで、Riverpod/Blocのような
   ボイラープレートの多い仕組みを導入する必要性が薄い。プロジェクト規模に
-  見合ったシンプルさを優先する。
+  見合ったシンプルさを優先する。機能が増えても「状態は1箇所」の方針は
+  変えていない（詳細は`flutter-conventions` skillのController節）。
+
+- **バッジ獲得の通知**: Streamや通知パッケージのような新しい仕組みは
+  導入せず、`ChangeNotifier`の標準機能だけで実現する。Controllerが
+  `newlyUnlockedBadges`という「1回限りの通知リスト」を持ち、UI
+  （`WalkScreen`）がリスナーで検知してSnackBar表示→リストをクリア、という
+  流れ。理由: トースト通知のためだけに新しい依存関係を増やすのは
+  「費用が発生しない範囲でシンプルに」という今回の方針に合わない。
 
 - **フォルダ構成と責務分離**（詳細は `flutter-conventions` skill）:
   - `lib/models/` — データ型のみ
   - `lib/geo/` — 幾何計算・輪検出（Flutter非依存の純粋Dart）
+  - `lib/badges/` — バッジの定義・達成条件判定（Flutter非依存に近い純粋Dart）
   - `lib/state/` — Controller（状態とビジネスロジックの橋渡し）
   - `lib/location/` — GPS取得（`geolocator`パッケージのラッパー）
-  - `lib/storage/` — ローカル永続化（`shared_preferences`を想定）
+  - `lib/storage/` — ローカル永続化（`shared_preferences`のみ。追加の
+    有料API・外部サーバー・サブスクリプションは一切使わない）
   - `lib/screens/` / `lib/widgets/` — UI
 
   理由: 幾何計算・GPS処理・描画を1ファイルに混在させると、後から
@@ -143,7 +197,7 @@ class Territory {
   になるため）が、`territory_repository.dart` にJSONの読み書きを集約して
   あるので、将来の変更箇所はそこに閉じ込められる想定。
 
-- **`TerritoryWalkController`が単一ユーザー前提**: 他プレイヤーの領土を
+- **`TeraWalkController`が単一ユーザー前提**: 他プレイヤーの領土を
   同時に表示・更新するには、Controllerの設計を「自分の状態」と
   「他プレイヤーの状態（リアルタイム同期が必要）」に分割し直す必要がある。
   今回は単一のControllerにまとめる設計を選んでいるため、対戦機能追加時は

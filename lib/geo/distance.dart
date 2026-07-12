@@ -20,3 +20,13 @@ double haversineDistanceMeters(TrackPoint a, TrackPoint b) {
 
   return earthRadiusMeters * c;
 }
+
+/// 軌跡(点の配列)の総移動距離(メートル)を返す。連続する点同士の
+/// ハバーサイン距離を単純に足し合わせるだけで、輪として閉じているかは問わない。
+double pathDistanceMeters(List<TrackPoint> points) {
+  var total = 0.0;
+  for (var i = 0; i < points.length - 1; i++) {
+    total += haversineDistanceMeters(points[i], points[i + 1]);
+  }
+  return total;
+}

@@ -15,7 +15,7 @@ description: このプロジェクトのFlutterコーディング規約（状態
 
 - `provider` パッケージを使う。`Riverpod` や `Bloc` のような重い仕組みは
   このアプリの規模（ソロ版・1画面）には過剰なので使わない。
-- アプリ全体の状態は単一の `ChangeNotifier`（`TerritoryWalkController` を想定）に
+- アプリ全体の状態は単一の `ChangeNotifier`（`TeraWalkController`）に
   集約する。「軌跡用の状態」「領土用の状態」「モード用の状態」のように
   Providerを分割しない。状態同士の整合性（軌跡が閉じたら領土に移す、等）を
   1箇所で管理した方がシンプルになるため。
@@ -31,22 +31,34 @@ lib/
 ├── main.dart                    アプリのエントリーポイント。Provider登録とMaterialAppのみ
 ├── models/                      データモデル（振る舞いを持たない型定義）
 │   ├── track_point.dart         軌跡上の1点（緯度経度＋取得時刻）
-│   └── territory.dart           確定済みの領土（点の配列＋面積）
+│   ├── territory.dart           確定済みの領土（点の配列＋面積）
+│   └── walk_record.dart         1回の散歩の記録（日時・距離・面積・ルート）
 ├── geo/                         幾何計算・GPS処理（UIに依存しない純粋なロジック）
 │   ├── territory_constants.dart 閾値の定数（minMoveMeters等）
 │   ├── distance.dart            ハバーサイン距離計算
 │   ├── polygon_area.dart        座標変換＋靴ひも公式の面積計算
 │   └── loop_detector.dart       ブレ除去フィルタ＋輪の自動クローズ判定
 ├── state/                       アプリの状態管理
-│   └── territory_walk_controller.dart  ChangeNotifier本体
+│   └── tera_walk_controller.dart  ChangeNotifier本体
 ├── location/                    位置情報の取得（GPSモード用）
 │   └── location_service.dart    geolocatorパッケージのラッパー
-├── storage/                     ローカル永続化（合計面積・領土リストの保存）
-│   └── territory_repository.dart
-├── screens/                     画面
-│   └── walk_screen.dart         メイン画面（地図＋操作パネル）
+├── storage/                     ローカル永続化（全てshared_preferences、費用が
+│                                  発生する外部サービスは使わない）
+│   ├── territory_repository.dart      領土リストの保存
+│   ├── walk_history_repository.dart   散歩記録（WalkRecord）リストの保存
+│   └── badge_repository.dart          解除済みバッジIDの保存
+├── badges/                      バッジ(実績)の定義・達成判定（UIに依存しない）
+│   ├── badge.dart                バッジ1件のデータモデル
+│   └── badge_definitions.dart    バッジ一覧・達成条件・判定ロジック
+├── screens/                     画面（Navigator.pushで遷移。named routesは
+│                                  画面数が少ないうちは導入しない）
+│   ├── walk_screen.dart          メイン画面（地図＋操作パネル）
+│   ├── history_screen.dart       散歩記録の一覧（振り返り・段階1）
+│   ├── history_detail_screen.dart 1件の散歩のルートを地図で見る（段階2）
+│   └── badge_screen.dart         バッジ一覧
 └── widgets/                     screens内で使う部品
     ├── app_style.dart            配色などの共通スタイル値（AppColors）
+    ├── format.dart                距離・面積の表示用フォーマット関数
     ├── mode_toggle.dart          テスト/GPSモード切替
     ├── control_panel.dart        スタート/ストップ・輪を閉じるボタン
     └── territory_map.dart        flutter_map本体（軌跡・領土ポリゴンの描画）
@@ -58,6 +70,65 @@ lib/
 - `models/` は基本的にコンストラクタとフィールドのみ。計算ロジックを
   メソッドとして生やさない（計算は `geo/` に置く）。
 - 地図の見た目・配色に関する詳細は `territory-rendering` skillを参照。
+
+## Controllerの状態（`TeraWalkController`）
+
+現在1画面構成だが、状態の種類が増えてきたため役割ごとに整理する。
+
+- `mode` / `isTracking`: 現在のモードと記録中かどうか。
+- `trail`: **今まさに歩いている、まだ閉じていない輪**の軌跡。輪が閉じる
+  たびに空にリセットされる（面積計算・輪のクローズ判定専用）。
+- `sessionRoute`: **今回のスタート〜ストップの間に記録した全ポイント**。
+  輪が閉じてもリセットされない。「今回の散歩の距離」の計算元であり、
+  ストップ時に`WalkRecord.route`としてそのまま保存される。GPSのブレ除去
+  フィルタもこちらを基準にする（`trail`基準だと輪が閉じた直後にフィルタが
+  一瞬効かなくなるため）。
+- `territories` / `totalAreaSquareMeters`: 確定済み領土の**全期間の**累計
+  （`TerritoryRepository`で永続化、既存の仕組み）。
+- `walkHistory`: 過去の散歩記録（`WalkRecord`の配列、`WalkHistoryRepository`で
+  永続化）。振り返り画面・バッジ判定の両方から参照する。
+- ストップ時、`sessionRoute`が2点以上あれば`WalkRecord`を1件作って
+  `walkHistory`に追加・保存する（0〜1点しかない=実質何も歩いていない
+  ケースは記録しない）。
+
+「今回のセッションの値」と「全期間の累計・履歴」を明確に分けているのが
+このControllerの設計の肝。両者を混ぜると、輪を複数回閉じる1回の散歩や、
+アプリを再起動した後の集計が壊れやすくなる。
+
+## バッジ(実績)の仕組み
+
+- `lib/badges/badge_definitions.dart` に「バッジの定義」と「達成条件」を
+  集約する。条件判定は`WalkStats`（散歩回数・領土数・累計距離・活動日数）
+  という集計値だけを見る純粋関数にしてあり、Controllerや保存形式の詳細を
+  知らない。
+- `TeraWalkController`は`stop()`のたびに`_evaluateBadges()`を呼び、
+  最新の`WalkStats`を集計 → まだ解除していないバッジの中から新たに条件を
+  満たしたものを`newlyUnlockedBadges`に積む → `BadgeRepository`にID一覧を
+  保存する、という流れ。
+- 解除済みかどうかは`unlockedBadgeIds`(IDの集合)だけを保存し、バッジの
+  タイトル・アイコン等の見た目は保存しない。バッジの文言やアイコンを
+  後から変えても、解除状態はそのまま引き継がれる。
+- 「新規解除の通知」は`newlyUnlockedBadges`を1回限りのイベントリストとして
+  扱う。`WalkScreen`が`Controller.addListener`でこれを監視し、SnackBarで
+  表示したら`clearNewlyUnlockedBadges()`で空にする。Streamや通知パッケージは
+  使わず、ChangeNotifierの標準的な仕組みだけで完結させている。
+- 新しいバッジを追加したいときは、`badge_definitions.dart`の`_badges`リストに
+  `_Badge(定義, 条件判定関数)`を1件足すだけでよい。Controller側の変更は不要。
+
+## 「1回限りの通知」の仕組み（バッジ・領土獲得の演出）
+
+`newlyUnlockedBadges`と同じパターンで、`newlyClosedTerritoryAreas`
+（輪が閉じるたびに追加される獲得面積のリスト）も用意してある。どちらも:
+
+1. Controllerが該当イベント発生時にリストへ値を追加する
+2. UI（`WalkScreen`）が`Controller.addListener`でリストの変化を検知する
+3. UIが演出（SnackBar／独自トースト）を表示し終わったら
+   `clearNewlyUnlockedBadges()`/`clearNewlyClosedTerritoryAreas()`を呼んで
+   リストを空にする
+
+この「Controllerに1回限りの通知リストを持たせ、UIが表示後にクリアする」
+形は今後も演出を増やす際の標準パターンとして使ってよい（Streamや通知
+パッケージを新たに導入する必要はない）。
 
 ## 命名規則
 

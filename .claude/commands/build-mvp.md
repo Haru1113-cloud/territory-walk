@@ -1,5 +1,5 @@
 ---
-description: テリトリー散歩MVPの実装をDESIGN.mdに沿って再実行する
+description: テラウォークMVPの実装をDESIGN.mdに沿って再実行する
 ---
 
 `docs/DESIGN.md` を読み込み、そこに書かれた仕様に沿って `lib/` 以下の

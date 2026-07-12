@@ -3,14 +3,14 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:territory_walk/main.dart';
+import 'package:tera_walk/main.dart';
 
 void main() {
-  testWidgets('起動するとテリトリー散歩の画面が表示される',
+  testWidgets('起動するとテラウォークの画面が表示される',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const TerritoryWalkApp());
+    await tester.pumpWidget(const TeraWalkApp());
 
-    expect(find.text('テリトリー散歩'), findsOneWidget);
+    expect(find.text('テラウォーク'), findsOneWidget);
     expect(find.text('スタート'), findsOneWidget);
   });
 }

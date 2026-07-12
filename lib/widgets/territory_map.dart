@@ -1,14 +1,16 @@
 // このファイルの役割:
 // flutter_map本体。確定済み領土ポリゴン・記録中の軌跡・現在地マーカーを描画する。
-// 配色・レイヤー順序・ベースマップの選定理由はterritory-rendering skillを参照。
+// 配色・レイヤー順序・ベースマップの選定理由・グロー表現の仕組みは
+// territory-rendering skillを参照。
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlng;
 import 'package:provider/provider.dart';
 
-import '../state/territory_walk_controller.dart';
+import '../state/tera_walk_controller.dart';
 import 'app_style.dart';
+import 'glow_line_style.dart';
 
 // 東京駅付近をデフォルトの初期表示位置とする(現在地が未取得のとき用)。
 const _defaultCenter = latlng.LatLng(35.681236, 139.767125);
@@ -18,7 +20,7 @@ class TerritoryMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<TerritoryWalkController>();
+    final controller = context.watch<TeraWalkController>();
 
     return FlutterMap(
       options: MapOptions(
@@ -29,56 +31,63 @@ class TerritoryMap extends StatelessWidget {
         },
       ),
       children: [
-        // CARTOのPositron(ラベルなし版)。地名・道路名などの文字情報を
-        // あえて持たないベースマップにすることで、軌跡と領土の色だけが
-        // 目立つすっきりした見た目にする。
+        // CARTOのDark Matter(ラベルなし版)。「情報を伝える地図」ではなく
+        // 「探検する舞台としての地図」にするため、暗い配色のタイルに
+        // 切り替えた(以前はライトテーマのPositronを使っていた)。
         TileLayer(
           urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+              'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
           subdomains: const ['a', 'b', 'c', 'd'],
+          retinaMode: RetinaMode.isHighDensity(context),
           userAgentPackageName: 'com.territorywalk.territory_walk',
         ),
         PolygonLayer(polygons: _buildTerritoryPolygons(controller)),
-        PolylineLayer(polylines: [_buildTrailPolyline(controller)]),
+        PolylineLayer(polylines: _buildTrailPolylines(controller)),
         if (controller.mode == TrackingMode.gps && controller.trail.isNotEmpty)
           MarkerLayer(markers: [_buildCurrentLocationMarker(controller)]),
       ],
     );
   }
 
-  Marker _buildCurrentLocationMarker(TerritoryWalkController controller) {
+  Marker _buildCurrentLocationMarker(TeraWalkController controller) {
     final current = controller.trail.last;
     return Marker(
       point: latlng.LatLng(current.lat, current.lng),
-      width: 32,
-      height: 32,
-      child: const Icon(Icons.my_location, color: AppColors.primary),
+      width: 40,
+      height: 40,
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.trail.withValues(alpha: 0.6),
+              blurRadius: 16,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: const Icon(Icons.my_location, color: AppColors.trail),
+      ),
     );
   }
 
-  List<Polygon> _buildTerritoryPolygons(TerritoryWalkController controller) {
-    return controller.territories
-        .map(
-          (territory) => Polygon(
-            points: territory.points
-                .map((p) => latlng.LatLng(p.lat, p.lng))
-                .toList(),
-            color: AppColors.territoryFill.withValues(alpha: 0.55),
-            borderColor: AppColors.territoryBorder,
-            borderStrokeWidth: 3,
-          ),
-        )
-        .toList();
+  /// 領土(紫のグロー)を、確定済みの件数分すべて重ねて返す。
+  List<Polygon> _buildTerritoryPolygons(TeraWalkController controller) {
+    return controller.territories.expand((territory) {
+      final points =
+          territory.points.map((p) => latlng.LatLng(p.lat, p.lng)).toList();
+      return buildGlowPolygons(points: points, color: AppColors.territory);
+    }).toList();
   }
 
-  Polyline _buildTrailPolyline(TerritoryWalkController controller) {
-    return Polyline(
-      points:
-          controller.trail.map((p) => latlng.LatLng(p.lat, p.lng)).toList(),
-      color: AppColors.primary,
-      strokeWidth: 6,
-      strokeCap: StrokeCap.round,
-      strokeJoin: StrokeJoin.round,
+  /// 記録中の軌跡(ミントのグロー)。
+  List<Polyline> _buildTrailPolylines(TeraWalkController controller) {
+    final points =
+        controller.trail.map((p) => latlng.LatLng(p.lat, p.lng)).toList();
+    return buildGlowPolylines(
+      points: points,
+      color: AppColors.trail,
+      coreWidth: 5,
     );
   }
 }

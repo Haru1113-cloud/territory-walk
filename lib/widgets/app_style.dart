@@ -1,41 +1,49 @@
 // このファイルの役割:
 // アプリ全体で使う配色・共通スタイル値を1箇所にまとめる。
-// 色・角丸の値は「デジタル庁デザインシステム」の公式トークンパッケージ
-// (@digital-go-jp/tailwind-theme-plugin v1.0.1)から採ったもの。
-// 採用理由・トークン名の対応はterritory-rendering skillを参照。
+// 「暗い舞台の上でネオンが光る」ゲームらしいトーンにするための
+// デザイントークン。採用理由・使い分けはterritory-rendering skillを参照。
+// (2026-07: デジタル庁デザインシステム準拠のライトテーマから、
+//  ダーク×グロー配色へ全面的に差し替えた)
 
 import 'package:flutter/material.dart';
 
 class AppColors {
   AppColors._();
 
-  /// プライマリ(スタートボタンなど主要な操作)。DADSトークン: key/blue-900。
-  static const primary = Color(0xFF0017C1);
+  /// アプリ全体の背景。ほぼ黒に近い暗いネイビー。
+  static const background = Color(0xFF0B0D14);
 
-  /// フォーカスリングなど、プライマリより明るい強調色。DADSトークン: focus-blue。
-  static const focus = Color(0xFF0877D7);
+  /// パネル・カードの面。暗い半透明のガラス調(背後にBackdropFilterで
+  /// ぼかしを重ねる前提の色)。
+  static const panel = Color(0xEB121520);
 
-  /// 確定済み領土の塗り。「成功」を表す色を流用する。DADSトークン: success-1。
-  static const territoryFill = Color(0xFF259D63);
+  /// 本文テキスト・見出し。明るいオフホワイト。
+  static const ink = Color(0xFFF3F1FA);
 
-  /// 確定済み領土の輪郭(塗りより濃い成功色)。DADSトークン: success-2。
-  static const territoryBorder = Color(0xFF197A4B);
+  /// 補助テキスト。くすんだグレー。
+  static const inkMuted = Color(0xFF8B90A6);
 
-  /// 本文テキスト・見出し。DADSトークン: solid-gray-900。
-  static const ink = Color(0xFF1A1A1A);
+  /// 領土(獲得エリア)の色。紫系。塗り・輪郭・グロー・獲得トーストの
+  /// 背景など、「領土を確定する」という行為に関わる箇所で一貫して使う。
+  static const territory = Color(0xFF8B6CFF);
 
-  /// 補助テキスト(白背景でコントラスト比4.5:1を確保)。DADSトークン: solid-gray-536。
-  static const inkMuted = Color(0xFF767676);
+  /// 軌跡(移動ルート)の色。ミント系。「今動いている・進んでいる」ことを
+  /// 表す箇所(軌跡の線、今回の距離のハイライト、スタートボタン等)で使う。
+  static const trail = Color(0xFF2FE6B8);
 
-  /// 枠線・区切り線。DADSトークン: solid-gray-300。
-  static const border = Color(0xFFB3B3B3);
+  /// 達成・バッジの色。琥珀系。
+  static const badgeAccent = Color(0xFFFFC24B);
 
-  /// パネルの背景。
-  static const panelBackground = Colors.white;
+  /// 明るいアクセント色(territory/trail/badgeAccent)の上に乗せる文字色。
+  /// 背景が明るいため、白文字ではなくほぼ黒に近い色でコントラストを取る。
+  static const onAccent = Color(0xFF06110D);
 
-  /// ボタン・カードの角丸。DADSトークン: radius-8。
+  /// 枠線・区切り線(暗い背景の上で使う、控えめな明度)。
+  static const border = Color(0xFF2A2E3D);
+
+  /// ボタン・カードの角丸。
   static const radiusSmall = 8.0;
 
-  /// ボトムシートなど大きめのコンテナの角丸。DADSトークン: radius-24。
+  /// ボトムシートなど大きめのコンテナの角丸。
   static const radiusLarge = 24.0;
 }
