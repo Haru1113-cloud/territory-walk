@@ -16,11 +16,13 @@ class ModeToggle extends StatelessWidget {
 
     return SegmentedButton<TrackingMode>(
       style: SegmentedButton.styleFrom(
-        shape: const StadiumBorder(),
-        selectedBackgroundColor: AppColors.ink,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusSmall),
+        ),
+        selectedBackgroundColor: AppColors.primary,
         selectedForegroundColor: Colors.white,
         foregroundColor: AppColors.ink,
-        side: const BorderSide(color: AppColors.ink, width: 1.5),
+        side: const BorderSide(color: AppColors.border, width: 1.5),
         textStyle: const TextStyle(fontWeight: FontWeight.w700),
       ),
       showSelectedIcon: false,

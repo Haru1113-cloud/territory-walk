@@ -23,8 +23,9 @@ class TerritoryWalkApp extends StatelessWidget {
         title: 'テリトリー散歩',
         theme: ThemeData(
           useMaterial3: true,
-          colorSchemeSeed: AppColors.accent,
+          colorSchemeSeed: AppColors.primary,
           scaffoldBackgroundColor: Colors.white,
+          focusColor: AppColors.focus,
           textTheme: ThemeData.light().textTheme.apply(
                 bodyColor: AppColors.ink,
                 displayColor: AppColors.ink,

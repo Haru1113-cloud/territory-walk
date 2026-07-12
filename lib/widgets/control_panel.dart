@@ -20,7 +20,9 @@ class ControlPanel extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.panelBackground,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppColors.radiusLarge),
+        ),
         boxShadow: [
           BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, -4)),
         ],
@@ -39,9 +41,12 @@ class ControlPanel extends StatelessWidget {
               Expanded(
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    shape: const StadiumBorder(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppColors.radiusSmall),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     textStyle:
                         const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
@@ -56,8 +61,11 @@ class ControlPanel extends StatelessWidget {
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.ink,
-                    side: const BorderSide(color: AppColors.ink, width: 1.5),
-                    shape: const StadiumBorder(),
+                    side: const BorderSide(color: AppColors.border, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppColors.radiusSmall),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     textStyle:
                         const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
@@ -93,19 +101,20 @@ class _AreaHero extends StatelessWidget {
               const Text(
                 '獲得した領土',
                 style: TextStyle(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w600,
+                  color: AppColors.inkMuted,
+                  fontWeight: FontWeight.w700,
                   fontSize: 13,
-                  letterSpacing: 1.2,
+                  letterSpacing: 0.5,
                 ),
               ),
               Text(
                 _formatArea(controller.totalAreaSquareMeters),
                 style: const TextStyle(
                   color: AppColors.ink,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 34,
-                  height: 1.1,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 32,
+                  letterSpacing: 0.01,
+                  height: 1.2,
                 ),
               ),
             ],
@@ -113,7 +122,7 @@ class _AreaHero extends StatelessWidget {
         ),
         Text(
           '軌跡 ${controller.trail.length} / 領土 ${controller.territories.length}件',
-          style: const TextStyle(color: Colors.black45, fontSize: 12),
+          style: const TextStyle(color: AppColors.inkMuted, fontSize: 12),
         ),
       ],
     );

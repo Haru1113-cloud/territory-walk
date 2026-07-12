@@ -52,7 +52,7 @@ class TerritoryMap extends StatelessWidget {
       point: latlng.LatLng(current.lat, current.lng),
       width: 32,
       height: 32,
-      child: const Icon(Icons.my_location, color: AppColors.accent),
+      child: const Icon(Icons.my_location, color: AppColors.primary),
     );
   }
 
@@ -75,7 +75,7 @@ class TerritoryMap extends StatelessWidget {
     return Polyline(
       points:
           controller.trail.map((p) => latlng.LatLng(p.lat, p.lng)).toList(),
-      color: AppColors.accent,
+      color: AppColors.primary,
       strokeWidth: 6,
       strokeCap: StrokeCap.round,
       strokeJoin: StrokeJoin.round,
