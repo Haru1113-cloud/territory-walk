@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>テリトリー散歩 - コア機能プロトタイプ</title>
+
+<!--
+  このファイルの役割:
+  「テリトリー散歩」アプリのコア機能（GPS軌跡の記録、輪が閉じたときの
+  領土確定、面積計算）をブラウザ上で検証するための試作品。
+  Flutter実装前に、以下4つのロジックが正しく動くことを確認する。
+
+    1. ハバーサイン公式による2点間の距離計算（地球を球体とみなした距離）
+    2. 靴ひも公式（Shoelace formula）による多角形の面積計算
+    3. スタート地点への接近判定による「輪の自動クローズ」
+    4. GPSのブレ（数メートル単位で位置が揺れる現象）を除去する
+       最小移動距離フィルタ
+
+  地図表示にはLeaflet（OpenStreetMapタイル、APIキー不要）を使用。
+  これはFlutter版でflutter_mapを使う想定と地図の見た目を揃えるため。
+
+  動作モードは2つ:
+    - テストモード: 地図をクリックした地点を軌跡の点として追加する
+                    （実機・屋外に出なくても輪の自動クローズや面積計算を
+                      確認できる）
+    - GPSモード: navigator.geolocation.watchPositionで現在地を追跡する
+-->
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+  }
+
+  #map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  #panel {
+    position: absolute;
+    z-index: 1000;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    max-width: 360px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  #panel h1 {
+    font-size: 16px;
+    margin: 0 0 8px;
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  button {
+    flex: 1;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background: #e0e0e0;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  button.active {
+    background: #2e7d32;
+    color: white;
+  }
+
+  button.danger {
+    background: #c62828;
+    color: white;
+  }
+
+  #status {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #333;
+    border-top: 1px solid #ddd;
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+
+  #status b {
+    color: #000;
+  }
+
+  #hint {
+    font-size: 11px;
+    color: #777;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="panel">
+  <h1>テリトリー散歩（プロトタイプ）</h1>
+
+  <div class="row">
+    <button id="modeTestBtn" class="active">テストモード</button>
+    <button id="modeGpsBtn">GPSモード</button>
+  </div>
+
+  <div class="row">
+    <button id="startStopBtn">スタート</button>
+    <button id="closeLoopBtn">輪を閉じる（手動）</button>
+  </div>
+
+  <div id="status">
+    状態: <b id="statusTracking">停止中</b> /
+    モード: <b id="statusMode">テスト</b><br>
+    現在の軌跡ポイント数: <b id="statusPoints">0</b><br>
+    確定した領土: <b id="statusTerritoryCount">0</b> 件<br>
+    合計獲得面積: <b id="statusArea">0 m²</b>
+  </div>
+
+  <div id="hint">
+    テストモード中は地図をクリックすると軌跡ポイントが追加されます。
+    スタート地点に近づく（15m以内）と輪が自動的に閉じます。
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// =========================================================================
+// 定数（GPSのブレ対策・輪の自動クローズ判定に使う閾値）
+// =========================================================================
+
+// これより短い移動はGPSのブレとみなして無視する（メートル）
+const MIN_MOVE_METERS = 5;
+
+// スタート地点からこの距離以内に戻ってきたら輪を閉じる（メートル）
+const CLOSE_RADIUS_METERS = 15;
+
+// 輪を閉じる判定を行うために最低限必要な軌跡ポイント数
+// （スタート直後に自分自身との距離0で誤って閉じてしまうのを防ぐ）
+const MIN_POINTS_TO_CLOSE = 5;
+
+// =========================================================================
+// 幾何計算ロジック（Flutterへそのまま移植する部分）
+// =========================================================================
+
+/**
+ * ハバーサイン公式で2点間の距離を計算する（メートル）。
+ * 地球を半径6371kmの球とみなした近似式。
+ */
+function haversineDistanceMeters(a, b) {
+  const R = 6371000; // 地球の半径（メートル）
+  const toRad = (deg) => (deg * Math.PI) / 180;
+
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+
+  return R * c;
+}
+
+/**
+ * 緯度経度を、origin(基準点)からの相対距離（メートル）のXY平面座標に変換する。
+ * 靴ひも公式は平面座標を前提とするため、緯度経度をそのまま使わずこの変換を挟む。
+ * 局所的な範囲（数百m〜数km程度の散歩コース）であれば十分な精度になる近似。
+ */
+function toLocalXY(point, origin) {
+  const metersPerDegLat = 111320;
+  const metersPerDegLng = 111320 * Math.cos((origin.lat * Math.PI) / 180);
+
+  return {
+    x: (point.lng - origin.lng) * metersPerDegLng,
+    y: (point.lat - origin.lat) * metersPerDegLat,
+  };
+}
+
+/**
+ * 靴ひも公式（Shoelace formula）で多角形の面積を計算する（平方メートル）。
+ * points は toLocalXY() で変換済みのXY平面座標の配列（閉じていなくてもよい）。
+ */
+function shoelaceAreaSquareMeters(xyPoints) {
+  let sum = 0;
+  const n = xyPoints.length;
+
+  for (let i = 0; i < n; i++) {
+    const current = xyPoints[i];
+    const next = xyPoints[(i + 1) % n];
+    sum += current.x * next.y - next.x * current.y;
+  }
+
+  return Math.abs(sum) / 2;
+}
+
+// =========================================================================
+// アプリの状態
+// =========================================================================
+
+let mode = "test"; // "test" | "gps"
+let tracking = false;
+let trailPoints = []; // 現在歩いている軌跡（まだ確定していない）
+let territories = []; // 確定済みの領土リスト { points, areaSquareMeters }
+let totalAreaSquareMeters = 0;
+let watchId = null;
+
+// =========================================================================
+// 地図の初期化
+// =========================================================================
+
+const map = L.map("map").setView([35.681236, 139.767125], 17); // 東京駅付近
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "&copy; OpenStreetMap contributors",
+  maxZoom: 19,
+}).addTo(map);
+
+let trailLine = L.polyline([], { color: "#2e7d32", weight: 4 }).addTo(map);
+let territoryLayers = [];
+
+// =========================================================================
+// UI要素の参照
+// =========================================================================
+
+const modeTestBtn = document.getElementById("modeTestBtn");
+const modeGpsBtn = document.getElementById("modeGpsBtn");
+const startStopBtn = document.getElementById("startStopBtn");
+const closeLoopBtn = document.getElementById("closeLoopBtn");
+
+const statusTracking = document.getElementById("statusTracking");
+const statusMode = document.getElementById("statusMode");
+const statusPoints = document.getElementById("statusPoints");
+const statusTerritoryCount = document.getElementById("statusTerritoryCount");
+const statusArea = document.getElementById("statusArea");
+
+// =========================================================================
+// 軌跡ポイントの追加（GPSモード・テストモード共通のエントリーポイント）
+// =========================================================================
+
+function tryAddPoint(rawPoint) {
+  if (!tracking) return;
+
+  // --- GPSのブレ除去フィルタ ---
+  // 直前のポイントとの距離が近すぎる場合は追加しない。
+  if (trailPoints.length > 0) {
+    const last = trailPoints[trailPoints.length - 1];
+    const moved = haversineDistanceMeters(last, rawPoint);
+    if (moved < MIN_MOVE_METERS) {
+      return;
+    }
+  }
+
+  trailPoints.push(rawPoint);
+  trailLine.setLatLngs(trailPoints.map((p) => [p.lat, p.lng]));
+
+  // --- 輪の自動クローズ判定 ---
+  // 十分な数のポイントを記録したうえで、スタート地点付近まで戻ってきたら
+  // 輪が閉じたとみなし、自動で領土を確定する。
+  if (trailPoints.length >= MIN_POINTS_TO_CLOSE) {
+    const start = trailPoints[0];
+    const distanceToStart = haversineDistanceMeters(rawPoint, start);
+    if (distanceToStart < CLOSE_RADIUS_METERS) {
+      closeLoop();
+      return;
+    }
+  }
+
+  updateStatus();
+}
+
+// =========================================================================
+// 輪を閉じて領土を確定する
+// =========================================================================
+
+function closeLoop() {
+  if (trailPoints.length < MIN_POINTS_TO_CLOSE) {
+    return; // ポイントが少なすぎる場合は面積計算しない
+  }
+
+  const origin = trailPoints[0];
+  const xyPoints = trailPoints.map((p) => toLocalXY(p, origin));
+  const area = shoelaceAreaSquareMeters(xyPoints);
+
+  territories.push({
+    points: [...trailPoints],
+    areaSquareMeters: area,
+  });
+  totalAreaSquareMeters += area;
+
+  drawTerritory(trailPoints);
+
+  // 次の輪のために軌跡をリセットする（現在地から新しい輪を歩き始められる）
+  trailPoints = [];
+  trailLine.setLatLngs([]);
+
+  updateStatus();
+}
+
+function drawTerritory(points) {
+  const polygon = L.polygon(
+    points.map((p) => [p.lat, p.lng]),
+    { color: "#1565c0", fillColor: "#42a5f5", fillOpacity: 0.4 }
+  ).addTo(map);
+  territoryLayers.push(polygon);
+}
+
+// =========================================================================
+// UIイベント
+// =========================================================================
+
+modeTestBtn.addEventListener("click", () => setMode("test"));
+modeGpsBtn.addEventListener("click", () => setMode("gps"));
+
+function setMode(newMode) {
+  if (tracking) {
+    alert("モードを切り替える前に、いったんストップしてください。");
+    return;
+  }
+  mode = newMode;
+  modeTestBtn.classList.toggle("active", mode === "test");
+  modeGpsBtn.classList.toggle("active", mode === "gps");
+  statusMode.textContent = mode === "test" ? "テスト" : "GPS";
+}
+
+startStopBtn.addEventListener("click", () => {
+  tracking = !tracking;
+
+  if (tracking) {
+    startStopBtn.textContent = "ストップ";
+    startStopBtn.classList.add("active");
+    trailPoints = [];
+    trailLine.setLatLngs([]);
+
+    if (mode === "gps") {
+      startGpsTracking();
+    }
+  } else {
+    startStopBtn.textContent = "スタート";
+    startStopBtn.classList.remove("active");
+    stopGpsTracking();
+  }
+
+  updateStatus();
+});
+
+closeLoopBtn.addEventListener("click", () => {
+  closeLoop();
+});
+
+// テストモード: 地図クリックで軌跡ポイントを追加する
+map.on("click", (e) => {
+  if (mode !== "test") return;
+  tryAddPoint({ lat: e.latlng.lat, lng: e.latlng.lng });
+});
+
+// =========================================================================
+// GPSモード
+// =========================================================================
+
+function startGpsTracking() {
+  if (!navigator.geolocation) {
+    alert("このブラウザは位置情報取得に対応していません。");
+    return;
+  }
+
+  watchId = navigator.geolocation.watchPosition(
+    (position) => {
+      tryAddPoint({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+      map.panTo([position.coords.latitude, position.coords.longitude]);
+    },
+    (error) => {
+      console.error("位置情報の取得に失敗しました", error);
+    },
+    { enableHighAccuracy: true, maximumAge: 1000 }
+  );
+}
+
+function stopGpsTracking() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+}
+
+// =========================================================================
+// ステータス表示の更新
+// =========================================================================
+
+function updateStatus() {
+  statusTracking.textContent = tracking ? "記録中" : "停止中";
+  statusPoints.textContent = trailPoints.length;
+  statusTerritoryCount.textContent = territories.length;
+  statusArea.textContent = formatArea(totalAreaSquareMeters);
+}
+
+function formatArea(squareMeters) {
+  if (squareMeters >= 1_000_000) {
+    return (squareMeters / 1_000_000).toFixed(3) + " km²";
+  }
+  return Math.round(squareMeters) + " m²";
+}
+
+updateStatus();
+</script>
+</body>
+</html>
