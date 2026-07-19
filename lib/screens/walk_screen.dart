@@ -17,7 +17,6 @@ import '../widgets/app_style.dart';
 import '../widgets/control_panel.dart';
 import '../widgets/format.dart';
 import '../widgets/map_camera_animation.dart';
-import '../widgets/map_zoom_controls.dart';
 import '../widgets/tera_walk_logo.dart';
 import '../widgets/territory_gain_toast.dart';
 import '../widgets/territory_map.dart';
@@ -177,12 +176,6 @@ class _WalkScreenState extends State<WalkScreen>
             left: 24,
             right: 24,
             child: TerritoryGainToast(message: _gainToastMessage),
-          ),
-          Positioned(
-            right: 16,
-            top: 0,
-            bottom: 0,
-            child: Center(child: MapZoomControls(mapController: _mapController)),
           ),
           Positioned(
             left: 0,

@@ -76,7 +76,6 @@ lib/
     ├── format.dart                距離・面積の表示用フォーマット関数
     ├── control_panel.dart        スタート/ストップボタン・統計チップ
     ├── territory_map.dart        flutter_map本体（軌跡・領土ポリゴンの描画・タップ判定）
-    ├── map_zoom_controls.dart    地図に浮かせるズームコントロール
     ├── map_camera_animation.dart 地図をアニメーション付きで移動させるヘルパー
     ├── glow_line_style.dart      軌跡・領土のグロー(光彩)表現
     ├── territory_gain_toast.dart 領土獲得時の演出トースト
