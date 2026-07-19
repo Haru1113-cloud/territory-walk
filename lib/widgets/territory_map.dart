@@ -31,17 +31,17 @@ class TerritoryMap extends StatelessWidget {
         initialZoom: 17,
       ),
       children: [
-        // CARTOのDark Matter(ラベルなし版)。「情報を伝える地図」ではなく
-        // 「探検する舞台としての地図」にするため、暗い配色のタイルに
-        // 切り替えた(以前はライトテーマのPositronを使っていた)。
-        // さらに2026-07、生のタイルをそのまま見せるのではなく
-        // BlendMode.colorで単色トーン(mapTint)に染めることで、
-        // 情報過多な「地図製品」ではなく単純化されたフラットな舞台に見せる。
+        // CARTOのPositron(ラベルなし版、明るい配色)。「情報を伝える地図」
+        // ではなく「柔らかい自然光の下の舞台」にしたいため、明るいタイルを
+        // 使う。生のタイルをそのまま見せるのではなく、BlendMode.colorで
+        // 単色トーン(mapTint)に染めることで、情報過多な「地図製品」では
+        // なく単純化されたフラットな舞台に見せる(明るい基調のタイルで
+        // なければ、色を乗せても暗いままになるため明るいタイルが前提)。
         ColorFiltered(
           colorFilter: const ColorFilter.mode(AppColors.mapTint, BlendMode.color),
           child: TileLayer(
             urlTemplate:
-                'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+                'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
             subdomains: const ['a', 'b', 'c', 'd'],
             retinaMode: RetinaMode.isHighDensity(context),
             userAgentPackageName: 'com.territorywalk.territory_walk',

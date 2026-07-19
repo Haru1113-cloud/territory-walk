@@ -1,54 +1,56 @@
 // このファイルの役割:
 // アプリ全体で使う配色・共通スタイル値を1箇所にまとめる。
-// 「暗い舞台の上でネオンが光る」ゲームらしいトーンにするための
+// 「柔らかい自然光の下で歩く」明るく落ち着いたトーンにするための
 // デザイントークン。採用理由・使い分けはterritory-rendering skillを参照。
-// (2026-07: デジタル庁デザインシステム準拠のライトテーマから、
-//  ダーク×グロー配色へ全面的に差し替えた)
+// (2026-07: ダーク×グロー配色から、クリーム系の明るいトーンへ
+//  全面的に差し替えた)
 
 import 'package:flutter/material.dart';
 
 class AppColors {
   AppColors._();
 
-  /// アプリ全体の背景。ほぼ黒に近い暗いネイビー。
-  static const background = Color(0xFF0B0D14);
+  /// アプリ全体の背景。生成りに近い、温かみのあるオフホワイト。
+  static const background = Color(0xFFF6F3EC);
 
-  /// パネル・カードの面。暗い半透明のガラス調(背後にBackdropFilterで
+  /// パネル・カードの面。ほぼ不透明な白のガラス調(背後にBackdropFilterで
   /// ぼかしを重ねる前提の色)。
-  static const panel = Color(0xEB121520);
+  static const panel = Color(0xF5FFFFFF);
 
-  /// 本文テキスト・見出し。明るいオフホワイト。
-  static const ink = Color(0xFFF3F1FA);
+  /// 本文テキスト・見出し。温かみのある濃いチャコール。
+  static const ink = Color(0xFF201C16);
 
-  /// 補助テキスト。くすんだグレー。
-  static const inkMuted = Color(0xFF8B90A6);
+  /// 補助テキスト。中間トーンのグレー。
+  static const inkMuted = Color(0xFF7A7568);
 
-  /// 領土(獲得エリア)の色。紫系。塗り・輪郭・グロー・獲得トーストの
+  /// 領土(獲得エリア)の色。深い紫。塗り・輪郭・グロー・獲得トーストの
   /// 背景など、「領土を確定する」という行為に関わる箇所で一貫して使う。
-  static const territory = Color(0xFF8B6CFF);
+  static const territory = Color(0xFF6C4FE0);
 
-  /// 軌跡(移動ルート)の色。ミント系。「今動いている・進んでいる」ことを
-  /// 表す箇所(軌跡の線、今回の距離のハイライト、スタートボタン等)で使う。
-  static const trail = Color(0xFF2FE6B8);
+  /// 軌跡(移動ルート)の色。深い緑(木々・芝を思わせるトーン)。
+  /// 「今動いている・進んでいる」ことを表す箇所(軌跡の線、今回の距離の
+  /// ハイライト、スタートボタン等)で使う。
+  static const trail = Color(0xFF1C8F63);
 
   /// 達成・バッジの色。琥珀系。
-  static const badgeAccent = Color(0xFFFFC24B);
+  static const badgeAccent = Color(0xFFE0A233);
 
   /// 他ユーザーが確定した領土の色。自分の領土(紫)とひと目で区別できる
   /// よう、離れた色相(珊瑚色)にする。
-  static const othersTerritory = Color(0xFFFF6B81);
+  static const othersTerritory = Color(0xFFE85D75);
 
   /// 地図タイルにかけるデュオトーンの色。生のOSM系タイルをそのまま見せず、
   /// 単色トーンで塗って「舞台の書き割り」のようにフラット化する狙い
   /// (BlendMode.colorでタイルの明度だけ残し、色相をこの色に置き換える)。
-  static const mapTint = Color(0xFF2B3454);
+  /// 明るいテーマに合わせ、淡いセージ(枯れた芝のような色)にしている。
+  static const mapTint = Color(0xFFDAD8C4);
 
-  /// 明るいアクセント色(territory/trail/badgeAccent)の上に乗せる文字色。
-  /// 背景が明るいため、白文字ではなくほぼ黒に近い色でコントラストを取る。
-  static const onAccent = Color(0xFF06110D);
+  /// 濃いアクセント色(territory/trail/badgeAccent/othersTerritory)の上に
+  /// 乗せる文字色。アクセント自体が中〜濃いトーンなので、白文字でコントラストを取る。
+  static const onAccent = Color(0xFFFFFFFF);
 
-  /// 枠線・区切り線(暗い背景の上で使う、控えめな明度)。
-  static const border = Color(0xFF2A2E3D);
+  /// 枠線・区切り線(明るい背景の上で使う、控えめな明度)。
+  static const border = Color(0xFFE3E0D3);
 
   /// ボタン・カードの角丸。
   static const radiusSmall = 8.0;

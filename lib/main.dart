@@ -30,11 +30,11 @@ class TeraWalkApp extends StatelessWidget {
         title: 'テラウォーク',
         theme: ThemeData(
           useMaterial3: true,
-          brightness: Brightness.dark,
+          brightness: Brightness.light,
           colorSchemeSeed: AppColors.trail,
           scaffoldBackgroundColor: AppColors.background,
           focusColor: AppColors.trail,
-          textTheme: ThemeData.dark().textTheme.apply(
+          textTheme: ThemeData.light().textTheme.apply(
                 bodyColor: AppColors.ink,
                 displayColor: AppColors.ink,
               ),
