@@ -81,6 +81,39 @@ class _WalkScreenState extends State<WalkScreen>
     );
   }
 
+  /// ニックネームの設定・変更ダイアログを表示する。アカウント登録はせず、
+  /// 表示名を端末ローカルに保存するだけ(他ユーザーへの領土公開時に添える)。
+  Future<void> _editNickname() async {
+    final controller = TextEditingController(text: _controller.nickname ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.panel,
+        title: const Text('ニックネーム', style: TextStyle(color: AppColors.ink)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 20,
+          style: const TextStyle(color: AppColors.ink),
+          decoration: const InputDecoration(hintText: '例: たろう'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null) return;
+    await _controller.setNickname(result);
+  }
+
   void _onControllerChanged() {
     _showNewlyUnlockedBadges();
     _showTerritoryGainToast();
@@ -131,6 +164,11 @@ class _WalkScreenState extends State<WalkScreen>
         scrolledUnderElevation: 0,
         centerTitle: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline, color: AppColors.ink),
+            tooltip: 'ニックネーム',
+            onPressed: _editNickname,
+          ),
           IconButton(
             icon: const Icon(Icons.emoji_events, color: AppColors.ink),
             tooltip: 'バッジ',

@@ -21,8 +21,10 @@ class RemoteTerritoryRepository {
       _firestore.collection('territories');
 
   /// 確定した領土をFirestoreへ公開する。
-  Future<void> publish(Territory territory, String ownerId) async {
-    final data = territory.toJson()..['ownerId'] = ownerId;
+  Future<void> publish(Territory territory, String ownerId, String? ownerName) async {
+    final data = territory.toJson()
+      ..['ownerId'] = ownerId
+      ..['ownerName'] = ownerName;
     await _collection.add(data);
   }
 

@@ -18,7 +18,7 @@ class _FakeAuthService extends AuthService {
 
 class _FakeRemoteTerritoryRepository extends RemoteTerritoryRepository {
   @override
-  Future<void> publish(Territory territory, String ownerId) async {}
+  Future<void> publish(Territory territory, String ownerId, String? ownerName) async {}
 
   @override
   Stream<List<Territory>> watchAll() => const Stream.empty();

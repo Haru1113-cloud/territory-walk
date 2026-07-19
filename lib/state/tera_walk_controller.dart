@@ -15,11 +15,13 @@ import '../badges/badge_definitions.dart';
 import '../geo/distance.dart';
 import '../geo/loop_detector.dart';
 import '../geo/polygon_area.dart';
+import '../geo/territory_constants.dart';
 import '../location/location_service.dart';
 import '../models/territory.dart';
 import '../models/track_point.dart';
 import '../models/walk_record.dart';
 import '../storage/badge_repository.dart';
+import '../storage/nickname_repository.dart';
 import '../storage/remote_territory_repository.dart';
 import '../storage/territory_repository.dart';
 import '../storage/walk_history_repository.dart';
@@ -32,16 +34,19 @@ class TeraWalkController extends ChangeNotifier {
     BadgeRepository? badgeRepository,
     RemoteTerritoryRepository? remoteRepository,
     AuthService? authService,
+    NicknameRepository? nicknameRepository,
   })  : _locationService = locationService ?? LocationService(),
         _repository = repository ?? TerritoryRepository(),
         _walkHistoryRepository =
             walkHistoryRepository ?? WalkHistoryRepository(),
         _badgeRepository = badgeRepository ?? BadgeRepository(),
         _remoteRepository = remoteRepository ?? RemoteTerritoryRepository(),
-        _authService = authService ?? AuthService() {
+        _authService = authService ?? AuthService(),
+        _nicknameRepository = nicknameRepository ?? NicknameRepository() {
     _loadSavedTerritories();
     _loadSavedWalkHistory();
     _loadSavedBadges();
+    _loadSavedNickname();
     _watchOthersTerritories();
     _authService.ensureSignedIn().then((uid) => _myOwnerId = uid);
   }
@@ -52,9 +57,14 @@ class TeraWalkController extends ChangeNotifier {
   final BadgeRepository _badgeRepository;
   final RemoteTerritoryRepository _remoteRepository;
   final AuthService _authService;
+  final NicknameRepository _nicknameRepository;
   StreamSubscription<TrackPoint>? _gpsSubscription;
   StreamSubscription<List<Territory>>? _othersSubscription;
   String? _myOwnerId;
+
+  /// 端末ローカルで設定した表示用ニックネーム(アカウント登録は不要)。
+  /// 未設定ならnull。
+  String? nickname;
 
   bool isTracking = false;
 
@@ -93,6 +103,14 @@ class TeraWalkController extends ChangeNotifier {
   /// 今回の散歩でここまで歩いた距離。
   double get sessionDistanceMeters => pathDistanceMeters(sessionRoute);
 
+  /// 「輪を閉じる」ボタンを表示すべきか。スタート地点から
+  /// [manualCloseVisibleRadiusMeters]以内に戻ってきたときだけtrueになる。
+  bool get isNearStartPoint {
+    if (!isTracking || trail.isEmpty) return false;
+    return haversineDistanceMeters(trail.last, trail.first) <
+        manualCloseVisibleRadiusMeters;
+  }
+
   Future<void> _loadSavedTerritories() async {
     final saved = await _repository.load();
     territories.addAll(saved);
@@ -108,6 +126,20 @@ class TeraWalkController extends ChangeNotifier {
   Future<void> _loadSavedBadges() async {
     final saved = await _badgeRepository.load();
     unlockedBadgeIds.addAll(saved);
+    notifyListeners();
+  }
+
+  Future<void> _loadSavedNickname() async {
+    nickname = await _nicknameRepository.load();
+    notifyListeners();
+  }
+
+  /// ニックネームを設定・保存する。以後に公開する領土から反映される
+  /// (過去に公開済みの領土は遡って更新されない)。
+  Future<void> setNickname(String value) async {
+    final trimmed = value.trim();
+    nickname = trimmed.isEmpty ? null : trimmed;
+    await _nicknameRepository.save(nickname);
     notifyListeners();
   }
 
@@ -249,7 +281,7 @@ class TeraWalkController extends ChangeNotifier {
     try {
       final ownerId = _myOwnerId ?? await _authService.ensureSignedIn();
       _myOwnerId = ownerId;
-      await _remoteRepository.publish(territory, ownerId);
+      await _remoteRepository.publish(territory, ownerId, nickname);
     } catch (_) {
       // 公開に失敗してもローカルの散歩体験は継続できるようにする。
     }

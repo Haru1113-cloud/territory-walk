@@ -13,11 +13,16 @@ class Territory {
   /// nullを許容する(自分の領土として扱われる)。
   final String? ownerId;
 
+  /// 持ち主が端末ローカルで設定したニックネーム(アカウント登録は不要)。
+  /// 未設定の場合はnull。
+  final String? ownerName;
+
   const Territory({
     required this.points,
     required this.areaSquareMeters,
     required this.closedAt,
     this.ownerId,
+    this.ownerName,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,6 +30,7 @@ class Territory {
         'areaSquareMeters': areaSquareMeters,
         'closedAt': closedAt.toIso8601String(),
         'ownerId': ownerId,
+        'ownerName': ownerName,
       };
 
   factory Territory.fromJson(Map<String, dynamic> json) => Territory(
@@ -34,5 +40,6 @@ class Territory {
         areaSquareMeters: (json['areaSquareMeters'] as num).toDouble(),
         closedAt: DateTime.parse(json['closedAt'] as String),
         ownerId: json['ownerId'] as String?,
+        ownerName: json['ownerName'] as String?,
       );
 }

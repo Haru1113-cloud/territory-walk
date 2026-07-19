@@ -10,3 +10,8 @@ const double closeRadiusMeters = 15;
 
 /// 輪を閉じる判定を行うために最低限必要な軌跡ポイント数。
 const int minPointsToClose = 5;
+
+/// スタート地点からこの距離以内に戻ってきたら、「輪を閉じる」ボタンを
+/// 表示する(メートル)。closeRadiusMetersより大きく、自動クローズより
+/// 手前で「もう閉じられますよ」と手動確定の選択肢を見せる目的の閾値。
+const double manualCloseVisibleRadiusMeters = 100;
