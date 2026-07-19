@@ -12,6 +12,7 @@ import 'package:tera_walk/models/territory.dart';
 import 'package:tera_walk/state/tera_walk_controller.dart';
 import 'package:tera_walk/storage/cheer_repository.dart';
 import 'package:tera_walk/storage/remote_territory_repository.dart';
+import 'package:tera_walk/widgets/tera_walk_logo.dart';
 
 class _FakeAuthService extends AuthService {
   @override
@@ -45,7 +46,7 @@ void main() {
 
     await tester.pumpWidget(TeraWalkApp(controller: controller));
 
-    expect(find.text('テラウォーク'), findsOneWidget);
+    expect(find.byType(TeraWalkLogo), findsOneWidget);
     expect(find.text('スタート'), findsOneWidget);
   });
 }

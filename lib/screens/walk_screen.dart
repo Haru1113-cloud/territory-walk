@@ -18,6 +18,7 @@ import '../widgets/control_panel.dart';
 import '../widgets/format.dart';
 import '../widgets/map_camera_animation.dart';
 import '../widgets/map_zoom_controls.dart';
+import '../widgets/tera_walk_logo.dart';
 import '../widgets/territory_gain_toast.dart';
 import '../widgets/territory_map.dart';
 
@@ -154,10 +155,7 @@ class _WalkScreenState extends State<WalkScreen>
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
-          'テラウォーク',
-          style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.w800),
-        ),
+        title: const TeraWalkLogo(),
         backgroundColor: AppColors.background.withValues(alpha: 0.75),
         elevation: 0,
         scrolledUnderElevation: 0,
