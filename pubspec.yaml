@@ -53,6 +53,11 @@ dependencies:
   firebase_auth: ^5.3.3
   cloud_firestore: ^5.5.0
 
+  # 散歩記録への写真添付(選んだ画像はbase64にしてローカル保存のJSONへ
+  # そのまま含める。web/iOS/Androidいずれもファイルシステム差異を
+  # 気にせず同じ方法で永続化できるようにするため)
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

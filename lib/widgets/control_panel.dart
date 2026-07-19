@@ -68,32 +68,12 @@ class ControlPanel extends StatelessWidget {
               const SizedBox(height: 12),
               const BadgeChipRow(),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _GlowButton(
-                      label: controller.isTracking ? 'ストップ' : 'スタート',
-                      color: AppColors.trail,
-                      fontSize: 16,
-                      onPressed: controller.isTracking
-                          ? controller.stop
-                          : controller.start,
-                    ),
-                  ),
-                  // スタート地点付近に戻ってきたときだけ「輪を閉じる」を
-                  // 表示する(遠く離れているうちは押しても意味がないため)。
-                  if (controller.isNearStartPoint) ...[
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _GlowButton(
-                        label: '輪を閉じる',
-                        color: AppColors.territory,
-                        fontSize: 14,
-                        onPressed: controller.closeLoopManually,
-                      ),
-                    ),
-                  ],
-                ],
+              _GlowButton(
+                label: controller.isTracking ? 'ストップ' : 'スタート',
+                color: AppColors.trail,
+                fontSize: 16,
+                onPressed:
+                    controller.isTracking ? controller.stop : controller.start,
               ),
             ],
           ),

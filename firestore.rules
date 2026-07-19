@@ -11,5 +11,15 @@ service cloud.firestore {
         && request.resource.data.ownerId == request.auth.uid;
       allow update, delete: if false;
     }
+
+    // territory_cheers: 応援スタンプ。ドキュメントIDが「送信先_送信元」で
+    // 固定されているため、本人の送信分(fromOwnerId == 自分のuid)だけ
+    // 書き込み(作成・上書き・取り消し)を許可すればよい。閲覧は誰でも可能
+    // (件数を集計してランキング・チャレンジ画面に表示するため)。
+    match /territory_cheers/{cheerId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.resource.data.fromOwnerId == request.auth.uid;
+    }
   }
 }
