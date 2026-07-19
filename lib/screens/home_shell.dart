@@ -76,14 +76,19 @@ class _HomeShellState extends State<HomeShell> {
           shadowColor: Colors.black45,
           borderRadius: BorderRadius.circular(28),
           clipBehavior: Clip.antiAlias,
-          child: NavigationBar(
-            height: 64,
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (index) =>
-                setState(() => _selectedIndex = index),
-            backgroundColor: Colors.transparent,
-            indicatorColor: AppColors.trail.withValues(alpha: 0.16),
-            destinations: _destinations,
+          child: Padding(
+            // 選択中タブの緑のインジケーターが、丸型の枠のすぐ内側に
+            // 迫って窮屈に見えないよう、上下に余白を持たせる。
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: NavigationBar(
+              height: 64,
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) =>
+                  setState(() => _selectedIndex = index),
+              backgroundColor: Colors.transparent,
+              indicatorColor: AppColors.trail.withValues(alpha: 0.16),
+              destinations: _destinations,
+            ),
           ),
         ),
       ),

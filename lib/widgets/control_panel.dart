@@ -207,29 +207,29 @@ class _DistanceHero extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _StatChip(
-              icon: Icons.hexagon_outlined,
-              color: AppColors.territory,
-              value: formatArea(controller.totalAreaSquareMeters),
-              label: '獲得面積(累計)',
-            ),
-            _StatChip(
-              icon: Icons.timeline,
-              color: AppColors.trail,
-              value: '${controller.trail.length}',
-              label: '軌跡',
-            ),
-            _StatChip(
-              icon: Icons.flag_outlined,
-              color: AppColors.territory,
-              value: '${controller.territories.length}件',
-              label: '領土',
-            ),
-          ],
+        // カードの高さが際限なく伸びて地図のズームボタンと重ならないよう、
+        // 折り返す`Wrap`ではなく1行固定+横スクロールにする
+        // (`BadgeChipRow`と同じ方針)。
+        SizedBox(
+          height: 32,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _StatChip(
+                icon: Icons.hexagon_outlined,
+                color: AppColors.territory,
+                value: formatArea(controller.totalAreaSquareMeters),
+                label: '獲得面積(累計)',
+              ),
+              const SizedBox(width: 8),
+              _StatChip(
+                icon: Icons.flag_outlined,
+                color: AppColors.territory,
+                value: '${controller.territories.length}件',
+                label: '領土',
+              ),
+            ],
+          ),
         ),
       ],
     );
