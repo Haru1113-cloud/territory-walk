@@ -26,7 +26,14 @@ class ChallengeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('今週のチャレンジ')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        // 下部の浮遊ナビゲーションバーに最後の項目が隠れないよう、
+        // 通常の余白に加えてバーの高さ分を確保する。
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          16 + AppColors.bottomNavBarHeight,
+        ),
         children: [
           Container(
             padding: const EdgeInsets.all(16),

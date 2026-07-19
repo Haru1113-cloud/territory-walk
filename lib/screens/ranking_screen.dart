@@ -29,7 +29,14 @@ class RankingScreen extends StatelessWidget {
               ),
             )
           : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              // 下部の浮遊ナビゲーションバーに最後の項目が隠れないよう、
+              // 通常の余白に加えてバーの高さ分を確保する。
+              padding: const EdgeInsets.fromLTRB(
+                0,
+                8,
+                0,
+                8 + AppColors.bottomNavBarHeight,
+              ),
               itemCount: ranking.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {

@@ -192,7 +192,14 @@ class _WalkScreenState extends State<WalkScreen>
             bottom: 0,
             child: SafeArea(
               top: false,
-              minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              // 12pxはカード自体の見た目上の余白、bottomNavBarHeightは
+              // HomeShellの浮遊ナビゲーションバーに隠れないための余白。
+              minimum: const EdgeInsets.fromLTRB(
+                16,
+                0,
+                16,
+                12 + AppColors.bottomNavBarHeight,
+              ),
               child: ControlPanel(onRecenter: _recenterToCurrentLocation),
             ),
           ),

@@ -19,6 +19,9 @@ class BadgeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('バッジ')),
       body: ListView.separated(
+        // 下部の浮遊ナビゲーションバーに最後の項目が隠れないよう、
+        // バーの高さ分を余白として確保する。
+        padding: const EdgeInsets.only(bottom: AppColors.bottomNavBarHeight),
         itemCount: allBadgeDefinitions.length,
         separatorBuilder: (context, index) => const Divider(height: 1),
         itemBuilder: (context, index) {

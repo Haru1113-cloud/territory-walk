@@ -57,4 +57,12 @@ class AppColors {
 
   /// ボトムシートなど大きめのコンテナの角丸。
   static const radiusLarge = 24.0;
+
+  /// 浮遊型の下部ナビゲーションバー(`HomeShell`)が占める高さの目安
+  /// (NavigationBar本体64px＋その下の余白12px)。`HomeShell`はScaffoldの
+  /// `extendBody: true`でタブの中身をバーの裏側まで敷き詰めているため、
+  /// タブ側で独自に画面下部へ固定表示するUI(`WalkScreen`の操作パネル等)は、
+  /// デバイスのセーフエリアに加えてこの高さ分も余白として確保しないと
+  /// バーの下に隠れてしまう。
+  static const bottomNavBarHeight = 76.0;
 }

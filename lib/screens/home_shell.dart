@@ -62,6 +62,11 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // trueにしないと、浮かせたナビゲーションバーの余白部分に
+      // (各タブの中身ではなく)このScaffold自体の背景色がベージュの
+      // 帯として見えてしまう。各タブの中身をナビゲーションバーの裏側まで
+      // 敷き詰めることで、バーの周りに透けて見えるようにする。
+      extendBody: true,
       body: IndexedStack(index: _selectedIndex, children: _tabs),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),

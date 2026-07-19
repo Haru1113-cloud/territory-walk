@@ -30,6 +30,9 @@ class HistoryScreen extends StatelessWidget {
               ),
             )
           : ListView.separated(
+              // 下部の浮遊ナビゲーションバーに最後の項目が隠れないよう、
+              // バーの高さ分を余白として確保する。
+              padding: const EdgeInsets.only(bottom: AppColors.bottomNavBarHeight),
               itemCount: records.length,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) =>
