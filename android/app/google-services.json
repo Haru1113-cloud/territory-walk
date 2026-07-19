@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "427675975131",
+    "project_id": "gpsapplication-15afc",
+    "storage_bucket": "gpsapplication-15afc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427675975131:android:a6815543aee02d34417bfe",
+        "android_client_info": {
+          "package_name": "com.territorywalk.territory_walk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZnIEpk5aPROXyMhzeAw7jb1Z7AvQqBmU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

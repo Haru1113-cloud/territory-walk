@@ -16,13 +16,16 @@ import 'glow_line_style.dart';
 const _defaultCenter = latlng.LatLng(35.681236, 139.767125);
 
 class TerritoryMap extends StatelessWidget {
-  const TerritoryMap({super.key});
+  const TerritoryMap({super.key, required this.mapController});
+
+  final MapController mapController;
 
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<TeraWalkController>();
 
     return FlutterMap(
+      mapController: mapController,
       options: MapOptions(
         initialCenter: _defaultCenter,
         initialZoom: 17,
@@ -38,6 +41,7 @@ class TerritoryMap extends StatelessWidget {
           retinaMode: RetinaMode.isHighDensity(context),
           userAgentPackageName: 'com.territorywalk.territory_walk',
         ),
+        PolygonLayer(polygons: _buildOthersTerritoryPolygons(controller)),
         PolygonLayer(polygons: _buildTerritoryPolygons(controller)),
         PolylineLayer(polylines: _buildTrailPolylines(controller)),
         if (controller.trail.isNotEmpty)
@@ -74,6 +78,16 @@ class TerritoryMap extends StatelessWidget {
       final points =
           territory.points.map((p) => latlng.LatLng(p.lat, p.lng)).toList();
       return buildGlowPolygons(points: points, color: AppColors.territory);
+    }).toList();
+  }
+
+  /// 他ユーザーが確定した領土(珊瑚色のグロー)。自分の領土より下に
+  /// 描画し、自分の領土がある場所では自分の色が優先して見えるようにする。
+  List<Polygon> _buildOthersTerritoryPolygons(TeraWalkController controller) {
+    return controller.othersTerritories.expand((territory) {
+      final points =
+          territory.points.map((p) => latlng.LatLng(p.lat, p.lng)).toList();
+      return buildGlowPolygons(points: points, color: AppColors.othersTerritory);
     }).toList();
   }
 

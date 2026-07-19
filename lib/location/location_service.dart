@@ -23,6 +23,23 @@ class LocationService {
         permission == LocationPermission.whileInUse;
   }
 
+  /// 現在地を1回だけ取得する。取得に失敗した場合(タイムアウト・電波状況等)は
+  /// nullを返す。権限確認は呼び出し側で[ensurePermission]を先に行うこと。
+  Future<TrackPoint?> getCurrentPosition() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.best),
+      ).timeout(const Duration(seconds: 10));
+      return TrackPoint(
+        lat: position.latitude,
+        lng: position.longitude,
+        capturedAt: DateTime.now(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 現在地の更新を[TrackPoint]のストリームとして受け取る。
   Stream<TrackPoint> watchPosition() {
     const settings = LocationSettings(

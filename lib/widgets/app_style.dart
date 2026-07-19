@@ -34,6 +34,10 @@ class AppColors {
   /// 達成・バッジの色。琥珀系。
   static const badgeAccent = Color(0xFFFFC24B);
 
+  /// 他ユーザーが確定した領土の色。自分の領土(紫)とひと目で区別できる
+  /// よう、離れた色相(珊瑚色)にする。
+  static const othersTerritory = Color(0xFFFF6B81);
+
   /// 明るいアクセント色(territory/trail/badgeAccent)の上に乗せる文字色。
   /// 背景が明るいため、白文字ではなくほぼ黒に近い色でコントラストを取る。
   static const onAccent = Color(0xFF06110D);

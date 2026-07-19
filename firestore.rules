@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // territories: 誰でも閲覧できるが(他ユーザーの領土を見る機能のため)、
+    // 書き込みは匿名認証済みかつ自分のownerIdでのみ許可する。
+    // 一度確定した領土は書き換え・削除しない(既存のローカル動作と同じ)。
+    match /territories/{territoryId} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

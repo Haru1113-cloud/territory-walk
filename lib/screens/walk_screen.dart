@@ -7,12 +7,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart' as latlng;
 import 'package:provider/provider.dart';
 
+import '../location/location_service.dart';
 import '../state/tera_walk_controller.dart';
 import '../widgets/app_style.dart';
 import '../widgets/control_panel.dart';
 import '../widgets/format.dart';
+import '../widgets/map_camera_animation.dart';
 import '../widgets/territory_gain_toast.dart';
 import '../widgets/territory_map.dart';
 import 'badge_screen.dart';
@@ -25,8 +29,11 @@ class WalkScreen extends StatefulWidget {
   State<WalkScreen> createState() => _WalkScreenState();
 }
 
-class _WalkScreenState extends State<WalkScreen> {
+class _WalkScreenState extends State<WalkScreen>
+    with SingleTickerProviderStateMixin {
   late final TeraWalkController _controller;
+  final MapController _mapController = MapController();
+  final LocationService _locationService = LocationService();
   String? _gainToastMessage;
   Timer? _gainToastTimer;
 
@@ -41,7 +48,37 @@ class _WalkScreenState extends State<WalkScreen> {
   void dispose() {
     _controller.removeListener(_onControllerChanged);
     _gainToastTimer?.cancel();
+    _mapController.dispose();
     super.dispose();
+  }
+
+  /// 「現在地に戻る」ボタンの処理。記録中かどうかに関わらず常に呼べる
+  /// (地図の表示位置を動かすだけで、記録には影響しない)。
+  Future<void> _recenterToCurrentLocation() async {
+    final granted = await _locationService.ensurePermission();
+    if (!mounted) return;
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('位置情報の利用が許可されていません')),
+      );
+      return;
+    }
+
+    final point = await _locationService.getCurrentPosition();
+    if (!mounted) return;
+    if (point == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('現在地を取得できませんでした')),
+      );
+      return;
+    }
+
+    await animatedMapMove(
+      _mapController,
+      this,
+      destination: latlng.LatLng(point.lat, point.lng),
+      destinationZoom: 17,
+    );
   }
 
   void _onControllerChanged() {
@@ -116,18 +153,21 @@ class _WalkScreenState extends State<WalkScreen> {
       ),
       body: Stack(
         children: [
-          const TerritoryMap(),
+          TerritoryMap(mapController: _mapController),
           Positioned(
             top: MediaQuery.of(context).padding.top + kToolbarHeight + 12,
             left: 24,
             right: 24,
             child: TerritoryGainToast(message: _gainToastMessage),
           ),
-          const Positioned(
+          Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: SafeArea(top: false, child: ControlPanel()),
+            child: SafeArea(
+              top: false,
+              child: ControlPanel(onRecenter: _recenterToCurrentLocation),
+            ),
           ),
         ],
       ),

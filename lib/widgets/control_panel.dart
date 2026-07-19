@@ -14,7 +14,10 @@ import 'badge_chip_row.dart';
 import 'format.dart';
 
 class ControlPanel extends StatelessWidget {
-  const ControlPanel({super.key});
+  const ControlPanel({super.key, required this.onRecenter});
+
+  /// 「現在地に戻る」ボタンが押されたときのコールバック。
+  final VoidCallback onRecenter;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +51,7 @@ class ControlPanel extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _DistanceHero(controller: controller),
+              _DistanceHero(controller: controller, onRecenter: onRecenter),
               const SizedBox(height: 12),
               const BadgeChipRow(),
               const SizedBox(height: 12),
@@ -137,28 +140,78 @@ class _GlowButton extends StatelessWidget {
   }
 }
 
+/// 地図を現在地までアニメーション付きで移動させる、小さな丸型ボタン。
+/// 「今動いている・進んでいる」ことに関わる操作なので、スタートボタンと
+/// 同じtrail(ミント)色のグローで揃える。
+class _RecenterButton extends StatelessWidget {
+  const _RecenterButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.trail.withValues(alpha: 0.55),
+            blurRadius: 14,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Material(
+        color: AppColors.trail,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: const Padding(
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.navigation,
+              color: AppColors.onAccent,
+              size: 18,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// 「今回の散歩」の移動距離を主役として大きく見せる。軌跡と同じミント系の
 /// 明るい色＋軽いグローを乗せ、パネルの中で一番目を引くようにする。
 /// 獲得面積は脇役として下に小さく・控えめな色で添えるだけにする
 /// (ユーザー要望: 距離を主役、面積は補助情報に)。
 class _DistanceHero extends StatelessWidget {
-  const _DistanceHero({required this.controller});
+  const _DistanceHero({required this.controller, required this.onRecenter});
 
   final TeraWalkController controller;
+  final VoidCallback onRecenter;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '今回の散歩の距離',
-          style: TextStyle(
-            color: AppColors.inkMuted,
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
-            letterSpacing: 0.5,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Expanded(
+              child: Text(
+                '今回の散歩の距離',
+                style: TextStyle(
+                  color: AppColors.inkMuted,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            _RecenterButton(onPressed: onRecenter),
+          ],
         ),
         Text(
           formatDistance(controller.sessionDistanceMeters),

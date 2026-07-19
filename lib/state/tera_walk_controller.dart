@@ -9,6 +9,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../auth/auth_service.dart';
 import '../badges/badge.dart';
 import '../badges/badge_definitions.dart';
 import '../geo/distance.dart';
@@ -19,6 +20,7 @@ import '../models/territory.dart';
 import '../models/track_point.dart';
 import '../models/walk_record.dart';
 import '../storage/badge_repository.dart';
+import '../storage/remote_territory_repository.dart';
 import '../storage/territory_repository.dart';
 import '../storage/walk_history_repository.dart';
 
@@ -28,26 +30,39 @@ class TeraWalkController extends ChangeNotifier {
     TerritoryRepository? repository,
     WalkHistoryRepository? walkHistoryRepository,
     BadgeRepository? badgeRepository,
+    RemoteTerritoryRepository? remoteRepository,
+    AuthService? authService,
   })  : _locationService = locationService ?? LocationService(),
         _repository = repository ?? TerritoryRepository(),
         _walkHistoryRepository =
             walkHistoryRepository ?? WalkHistoryRepository(),
-        _badgeRepository = badgeRepository ?? BadgeRepository() {
+        _badgeRepository = badgeRepository ?? BadgeRepository(),
+        _remoteRepository = remoteRepository ?? RemoteTerritoryRepository(),
+        _authService = authService ?? AuthService() {
     _loadSavedTerritories();
     _loadSavedWalkHistory();
     _loadSavedBadges();
+    _watchOthersTerritories();
+    _authService.ensureSignedIn().then((uid) => _myOwnerId = uid);
   }
 
   final LocationService _locationService;
   final TerritoryRepository _repository;
   final WalkHistoryRepository _walkHistoryRepository;
   final BadgeRepository _badgeRepository;
+  final RemoteTerritoryRepository _remoteRepository;
+  final AuthService _authService;
   StreamSubscription<TrackPoint>? _gpsSubscription;
+  StreamSubscription<List<Territory>>? _othersSubscription;
+  String? _myOwnerId;
 
   bool isTracking = false;
 
   final List<TrackPoint> trail = [];
   final List<Territory> territories = [];
+
+  /// 他ユーザーが公開した領土(閲覧専用。自分の分はここには含まない)。
+  final List<Territory> othersTerritories = [];
 
   /// 今回のスタート〜ストップの間に記録した全ポイント。輪が閉じても
   /// (`trail`と違って)リセットされない。移動距離の計算と、散歩記録の
@@ -94,6 +109,17 @@ class TeraWalkController extends ChangeNotifier {
     final saved = await _badgeRepository.load();
     unlockedBadgeIds.addAll(saved);
     notifyListeners();
+  }
+
+  /// 他ユーザーの領土をリアルタイムに購読する。取得に失敗しても
+  /// (オフライン等)アプリ自体は問題なく使えるようにする。
+  void _watchOthersTerritories() {
+    _othersSubscription = _remoteRepository.watchAll().listen((all) {
+      othersTerritories
+        ..clear()
+        ..addAll(all.where((t) => t.ownerId != _myOwnerId));
+      notifyListeners();
+    }, onError: (_) {});
   }
 
   /// UIがトースト表示し終わったら呼ぶ。呼ばないと同じ通知が残り続ける。
@@ -202,22 +228,37 @@ class TeraWalkController extends ChangeNotifier {
     }
 
     final area = shoelaceAreaSquareMeters(trail);
-    territories.add(Territory(
+    final territory = Territory(
       points: List.of(trail),
       areaSquareMeters: area,
       closedAt: DateTime.now(),
-    ));
+    );
+    territories.add(territory);
     _sessionAreaSquareMeters += area;
     newlyClosedTerritoryAreas.add(area);
     trail.clear();
 
     _repository.save(territories);
+    _publishToRemote(territory);
     notifyListeners();
+  }
+
+  /// 確定した領土を他ユーザーにも見えるようFirestoreへ公開する。
+  /// オフラインなど失敗しても、ローカルの記録には影響させない。
+  Future<void> _publishToRemote(Territory territory) async {
+    try {
+      final ownerId = _myOwnerId ?? await _authService.ensureSignedIn();
+      _myOwnerId = ownerId;
+      await _remoteRepository.publish(territory, ownerId);
+    } catch (_) {
+      // 公開に失敗してもローカルの散歩体験は継続できるようにする。
+    }
   }
 
   @override
   void dispose() {
     _gpsSubscription?.cancel();
+    _othersSubscription?.cancel();
     super.dispose();
   }
 }
