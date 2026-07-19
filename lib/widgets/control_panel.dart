@@ -46,11 +46,24 @@ class ControlPanel extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // 「これはボトムシートである」ことを一目で伝えるための
+              // 飾りのドラッグハンドル(実際にドラッグでは閉じない)。
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               _DistanceHero(controller: controller, onRecenter: onRecenter),
               const SizedBox(height: 12),
               const BadgeChipRow(),
@@ -231,13 +244,80 @@ class _DistanceHero extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          '獲得面積(累計) ${formatArea(controller.totalAreaSquareMeters)} '
-          '・軌跡 ${controller.trail.length} / 領土 ${controller.territories.length}件',
-          style: const TextStyle(color: AppColors.inkMuted, fontSize: 12),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _StatChip(
+              icon: Icons.hexagon_outlined,
+              color: AppColors.territory,
+              value: formatArea(controller.totalAreaSquareMeters),
+              label: '獲得面積(累計)',
+            ),
+            _StatChip(
+              icon: Icons.timeline,
+              color: AppColors.trail,
+              value: '${controller.trail.length}',
+              label: '軌跡',
+            ),
+            _StatChip(
+              icon: Icons.flag_outlined,
+              color: AppColors.territory,
+              value: '${controller.territories.length}件',
+              label: '領土',
+            ),
+          ],
         ),
       ],
+    );
+  }
+}
+
+/// 統計を1件ずつ表示する小さなピル型チップ。長い一行のテキストより
+/// 一目で数値が拾えるよう、参考にしたUIの統計カードの見た目に寄せた。
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.icon,
+    required this.color,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.background.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.ink,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: const TextStyle(color: AppColors.inkMuted, fontSize: 11),
+          ),
+        ],
+      ),
     );
   }
 }

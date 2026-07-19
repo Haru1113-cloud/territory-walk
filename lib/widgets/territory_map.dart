@@ -34,12 +34,18 @@ class TerritoryMap extends StatelessWidget {
         // CARTOのDark Matter(ラベルなし版)。「情報を伝える地図」ではなく
         // 「探検する舞台としての地図」にするため、暗い配色のタイルに
         // 切り替えた(以前はライトテーマのPositronを使っていた)。
-        TileLayer(
-          urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
-          subdomains: const ['a', 'b', 'c', 'd'],
-          retinaMode: RetinaMode.isHighDensity(context),
-          userAgentPackageName: 'com.territorywalk.territory_walk',
+        // さらに2026-07、生のタイルをそのまま見せるのではなく
+        // BlendMode.colorで単色トーン(mapTint)に染めることで、
+        // 情報過多な「地図製品」ではなく単純化されたフラットな舞台に見せる。
+        ColorFiltered(
+          colorFilter: const ColorFilter.mode(AppColors.mapTint, BlendMode.color),
+          child: TileLayer(
+            urlTemplate:
+                'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+            subdomains: const ['a', 'b', 'c', 'd'],
+            retinaMode: RetinaMode.isHighDensity(context),
+            userAgentPackageName: 'com.territorywalk.territory_walk',
+          ),
         ),
         PolygonLayer(polygons: _buildOthersTerritoryPolygons(controller)),
         PolygonLayer(polygons: _buildTerritoryPolygons(controller)),

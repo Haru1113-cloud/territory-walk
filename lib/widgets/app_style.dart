@@ -38,6 +38,11 @@ class AppColors {
   /// よう、離れた色相(珊瑚色)にする。
   static const othersTerritory = Color(0xFFFF6B81);
 
+  /// 地図タイルにかけるデュオトーンの色。生のOSM系タイルをそのまま見せず、
+  /// 単色トーンで塗って「舞台の書き割り」のようにフラット化する狙い
+  /// (BlendMode.colorでタイルの明度だけ残し、色相をこの色に置き換える)。
+  static const mapTint = Color(0xFF2B3454);
+
   /// 明るいアクセント色(territory/trail/badgeAccent)の上に乗せる文字色。
   /// 背景が明るいため、白文字ではなくほぼ黒に近い色でコントラストを取る。
   static const onAccent = Color(0xFF06110D);

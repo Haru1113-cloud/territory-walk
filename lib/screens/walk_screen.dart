@@ -17,6 +17,7 @@ import '../widgets/app_style.dart';
 import '../widgets/control_panel.dart';
 import '../widgets/format.dart';
 import '../widgets/map_camera_animation.dart';
+import '../widgets/map_zoom_controls.dart';
 import '../widgets/territory_gain_toast.dart';
 import '../widgets/territory_map.dart';
 import 'badge_screen.dart';
@@ -164,13 +165,13 @@ class _WalkScreenState extends State<WalkScreen>
         scrolledUnderElevation: 0,
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: AppColors.ink),
+          _AppBarGlassIcon(
+            icon: Icons.person_outline,
             tooltip: 'ニックネーム',
             onPressed: _editNickname,
           ),
-          IconButton(
-            icon: const Icon(Icons.emoji_events, color: AppColors.ink),
+          _AppBarGlassIcon(
+            icon: Icons.emoji_events,
             tooltip: 'バッジ',
             onPressed: () {
               Navigator.of(context).push(
@@ -178,8 +179,8 @@ class _WalkScreenState extends State<WalkScreen>
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.calendar_month, color: AppColors.ink),
+          _AppBarGlassIcon(
+            icon: Icons.calendar_month,
             tooltip: '散歩の記録',
             onPressed: () {
               Navigator.of(context).push(
@@ -187,6 +188,7 @@ class _WalkScreenState extends State<WalkScreen>
               );
             },
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Stack(
@@ -199,6 +201,12 @@ class _WalkScreenState extends State<WalkScreen>
             child: TerritoryGainToast(message: _gainToastMessage),
           ),
           Positioned(
+            right: 16,
+            top: 0,
+            bottom: 0,
+            child: Center(child: MapZoomControls(mapController: _mapController)),
+          ),
+          Positioned(
             left: 0,
             right: 0,
             bottom: 0,
@@ -208,6 +216,39 @@ class _WalkScreenState extends State<WalkScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// AppBarのアイコンをガラス風の円で囲む。素のアイコンより存在感と
+/// タップしやすさを持たせるための共通ラッパー。
+class _AppBarGlassIcon extends StatelessWidget {
+  const _AppBarGlassIcon({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.panel,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: IconButton(
+          icon: Icon(icon, color: AppColors.ink, size: 20),
+          tooltip: tooltip,
+          onPressed: onPressed,
+        ),
       ),
     );
   }
