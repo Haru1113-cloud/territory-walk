@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
-import 'screens/walk_screen.dart';
+import 'screens/home_shell.dart';
 import 'state/tera_walk_controller.dart';
 import 'widgets/app_style.dart';
 
@@ -46,7 +46,7 @@ class TeraWalkApp extends StatelessWidget {
             ),
           ),
         ),
-        home: const WalkScreen(),
+        home: const HomeShell(),
       ),
     );
   }

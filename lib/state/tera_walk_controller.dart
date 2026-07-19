@@ -17,6 +17,7 @@ import '../geo/loop_detector.dart';
 import '../geo/polygon_area.dart';
 import '../geo/territory_constants.dart';
 import '../location/location_service.dart';
+import '../models/ranking_entry.dart';
 import '../models/territory.dart';
 import '../models/track_point.dart';
 import '../models/walk_record.dart';
@@ -99,6 +100,48 @@ class TeraWalkController extends ChangeNotifier {
 
   double get totalAreaSquareMeters =>
       territories.fold(0, (sum, t) => sum + t.areaSquareMeters);
+
+  /// 獲得面積の合計でユーザーを降順に並べたランキング。自分の分は
+  /// (Firestoreに公開済みかどうかに関わらず)ローカルの`territories`から
+  /// 集計するので、公開に失敗していてもランキングには反映される。
+  /// 他ユーザーの分は`othersTerritories`(Firestore購読)をownerIdごとに
+  /// 集計する。新しいサーバー処理は追加せず、既存の購読データの範囲で
+  /// クライアント側で計算するだけにとどめている。
+  List<RankingEntry> get ranking {
+    final byOwner = <String, List<Territory>>{};
+    for (final t in othersTerritories) {
+      final ownerId = t.ownerId;
+      if (ownerId == null) continue;
+      byOwner.putIfAbsent(ownerId, () => []).add(t);
+    }
+
+    final entries = byOwner.entries.map((entry) {
+      final territories = entry.value;
+      return RankingEntry(
+        ownerId: entry.key,
+        ownerName: territories
+            .map((t) => t.ownerName)
+            .firstWhere((name) => name != null, orElse: () => null),
+        totalAreaSquareMeters:
+            territories.fold(0, (sum, t) => sum + t.areaSquareMeters),
+        territoryCount: territories.length,
+        isMe: false,
+      );
+    }).toList();
+
+    entries.add(RankingEntry(
+      ownerId: _myOwnerId ?? 'me',
+      ownerName: nickname,
+      totalAreaSquareMeters: totalAreaSquareMeters,
+      territoryCount: territories.length,
+      isMe: true,
+    ));
+
+    entries.sort(
+      (a, b) => b.totalAreaSquareMeters.compareTo(a.totalAreaSquareMeters),
+    );
+    return entries;
+  }
 
   /// 今回の散歩でここまで歩いた距離。
   double get sessionDistanceMeters => pathDistanceMeters(sessionRoute);

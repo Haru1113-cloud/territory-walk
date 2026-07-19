@@ -8,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlng;
 import 'package:provider/provider.dart';
 
+import '../models/territory.dart';
 import '../state/tera_walk_controller.dart';
 import 'app_style.dart';
 import 'glow_line_style.dart';
@@ -23,6 +24,15 @@ class TerritoryMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<TeraWalkController>();
+
+    // 領土タップで持ち主を表示するためのヒット判定。他ユーザー分→自分の分の
+    // 順で1つのPolygonLayerにまとめる(自分の領土が上に重なって見えるよう、
+    // 描画順は変えない)。
+    final hitNotifier = ValueNotifier<LayerHitResult<Territory>?>(null);
+    final territoryPolygons = [
+      ..._buildOthersTerritoryPolygons(controller),
+      ..._buildTerritoryPolygons(controller),
+    ];
 
     return FlutterMap(
       mapController: mapController,
@@ -47,12 +57,39 @@ class TerritoryMap extends StatelessWidget {
             userAgentPackageName: 'com.territorywalk.territory_walk',
           ),
         ),
-        PolygonLayer(polygons: _buildOthersTerritoryPolygons(controller)),
-        PolygonLayer(polygons: _buildTerritoryPolygons(controller)),
+        GestureDetector(
+          onTap: () =>
+              _handleTerritoryTap(context, controller, hitNotifier.value),
+          child: PolygonLayer<Territory>(
+            polygons: territoryPolygons,
+            hitNotifier: hitNotifier,
+          ),
+        ),
         PolylineLayer(polylines: _buildTrailPolylines(controller)),
         if (controller.trail.isNotEmpty)
           MarkerLayer(markers: [_buildCurrentLocationMarker(controller)]),
       ],
+    );
+  }
+
+  /// 領土がタップされたとき、持ち主の名前をSnackBarで表示する。
+  /// 何もない場所をタップした場合(hitValuesが空)は何もしない。
+  void _handleTerritoryTap(
+    BuildContext context,
+    TeraWalkController controller,
+    LayerHitResult<Territory>? hit,
+  ) {
+    final hitValues = hit?.hitValues;
+    if (hitValues == null || hitValues.isEmpty) return;
+
+    final territory = hitValues.first;
+    final isMine = controller.territories.contains(territory);
+    final name = isMine
+        ? (controller.nickname ?? 'あなた')
+        : (territory.ownerName ?? '名無しさん');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$nameの領土')),
     );
   }
 
@@ -79,21 +116,33 @@ class TerritoryMap extends StatelessWidget {
   }
 
   /// 領土(紫のグロー)を、確定済みの件数分すべて重ねて返す。
-  List<Polygon> _buildTerritoryPolygons(TeraWalkController controller) {
+  List<Polygon<Territory>> _buildTerritoryPolygons(
+    TeraWalkController controller,
+  ) {
     return controller.territories.expand((territory) {
       final points =
           territory.points.map((p) => latlng.LatLng(p.lat, p.lng)).toList();
-      return buildGlowPolygons(points: points, color: AppColors.territory);
+      return buildGlowPolygons<Territory>(
+        points: points,
+        color: AppColors.territory,
+        hitValue: territory,
+      );
     }).toList();
   }
 
   /// 他ユーザーが確定した領土(珊瑚色のグロー)。自分の領土より下に
   /// 描画し、自分の領土がある場所では自分の色が優先して見えるようにする。
-  List<Polygon> _buildOthersTerritoryPolygons(TeraWalkController controller) {
+  List<Polygon<Territory>> _buildOthersTerritoryPolygons(
+    TeraWalkController controller,
+  ) {
     return controller.othersTerritories.expand((territory) {
       final points =
           territory.points.map((p) => latlng.LatLng(p.lat, p.lng)).toList();
-      return buildGlowPolygons(points: points, color: AppColors.othersTerritory);
+      return buildGlowPolygons<Territory>(
+        points: points,
+        color: AppColors.othersTerritory,
+        hitValue: territory,
+      );
     }).toList();
   }
 

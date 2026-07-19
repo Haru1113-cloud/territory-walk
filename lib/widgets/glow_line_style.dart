@@ -44,22 +44,27 @@ List<Polyline> buildGlowPolylines({
 
 /// [points]で囲まれた領土に、[color]のグローを付けたPolygonのリストを返す。
 /// 呼び出し側はこのリストをそのまま`PolygonLayer.polygons`に足し込む。
-List<Polygon> buildGlowPolygons({
+/// [hitValue]を渡すと、タップ判定(`PolygonLayer.hitNotifier`)でこの値が
+/// 拾えるようになる(例: タップした領土の持ち主を特定するため)。
+List<Polygon<R>> buildGlowPolygons<R extends Object>({
   required List<LatLng> points,
   required Color color,
+  R? hitValue,
 }) {
   return [
-    Polygon(
+    Polygon<R>(
       points: points,
       color: Colors.transparent,
       borderColor: color.withValues(alpha: 0.25),
       borderStrokeWidth: 10,
+      hitValue: hitValue,
     ),
-    Polygon(
+    Polygon<R>(
       points: points,
       color: color.withValues(alpha: 0.32),
       borderColor: color,
       borderStrokeWidth: 2.5,
+      hitValue: hitValue,
     ),
   ];
 }

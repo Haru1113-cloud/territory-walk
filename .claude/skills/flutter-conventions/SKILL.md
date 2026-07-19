@@ -28,11 +28,15 @@ description: このプロジェクトのFlutterコーディング規約（状態
 
 ```
 lib/
-├── main.dart                    アプリのエントリーポイント。Provider登録とMaterialAppのみ
+├── main.dart                    アプリのエントリーポイント。Firebase初期化・
+│                                  Provider登録・MaterialAppのみ
+├── firebase_options.dart        flutterfire configureが生成するFirebase設定
+│                                  (機密情報ではない、コミットして問題ない)
 ├── models/                      データモデル（振る舞いを持たない型定義）
 │   ├── track_point.dart         軌跡上の1点（緯度経度＋取得時刻）
-│   ├── territory.dart           確定済みの領土（点の配列＋面積）
-│   └── walk_record.dart         1回の散歩の記録（日時・距離・面積・ルート）
+│   ├── territory.dart           確定済みの領土（点の配列＋面積＋持ち主情報）
+│   ├── walk_record.dart         1回の散歩の記録（日時・距離・面積・ルート）
+│   └── ranking_entry.dart       ランキング画面用の1ユーザー分の集計結果
 ├── geo/                         幾何計算・GPS処理（UIに依存しない純粋なロジック）
 │   ├── territory_constants.dart 閾値の定数（minMoveMeters等）
 │   ├── distance.dart            ハバーサイン距離計算
@@ -40,28 +44,45 @@ lib/
 │   └── loop_detector.dart       ブレ除去フィルタ＋輪の自動クローズ判定
 ├── state/                       アプリの状態管理
 │   └── tera_walk_controller.dart  ChangeNotifier本体
-├── location/                    位置情報の取得（GPSモード用）
+├── location/                    位置情報の取得
 │   └── location_service.dart    geolocatorパッケージのラッパー
-├── storage/                     ローカル永続化（全てshared_preferences、費用が
-│                                  発生する外部サービスは使わない）
-│   ├── territory_repository.dart      領土リストの保存
-│   ├── walk_history_repository.dart   散歩記録（WalkRecord）リストの保存
-│   └── badge_repository.dart          解除済みバッジIDの保存
+├── auth/                        他ユーザーと自分の領土を区別するためだけの
+│                                  最小限の認証（ログイン画面は持たない）
+│   └── auth_service.dart        FirebaseAuthの匿名サインインラッパー
+├── storage/                     永続化
+│   ├── territory_repository.dart        領土リストのローカル保存(shared_preferences)
+│   ├── walk_history_repository.dart     散歩記録のローカル保存
+│   ├── badge_repository.dart            解除済みバッジIDのローカル保存
+│   ├── nickname_repository.dart         ニックネームのローカル保存
+│   └── remote_territory_repository.dart 確定済み領土をFirestoreへ公開/購読
+│                                          (無料のSparkプランのみで運用)
 ├── badges/                      バッジ(実績)の定義・達成判定（UIに依存しない）
 │   ├── badge.dart                バッジ1件のデータモデル
 │   └── badge_definitions.dart    バッジ一覧・達成条件・判定ロジック
-├── screens/                     画面（Navigator.pushで遷移。named routesは
-│                                  画面数が少ないうちは導入しない）
-│   ├── walk_screen.dart          メイン画面（地図＋操作パネル）
-│   ├── history_screen.dart       散歩記録の一覧（振り返り・段階1）
-│   ├── history_detail_screen.dart 1件の散歩のルートを地図で見る（段階2）
-│   └── badge_screen.dart         バッジ一覧
+├── screens/                     画面
+│   ├── home_shell.dart           下部ナビゲーションバーで4画面を切り替える入れ物
+│   ├── walk_screen.dart          地図＋操作パネル（「地図」タブ）
+│   ├── ranking_screen.dart       獲得面積ランキング（「ランキング」タブ）
+│   ├── history_screen.dart       散歩記録の一覧（「記録」タブ・振り返り段階1）
+│   ├── history_detail_screen.dart 1件の散歩のルートを地図で見る（段階2、push遷移）
+│   └── badge_screen.dart         バッジ一覧（「バッジ」タブ）
 └── widgets/                     screens内で使う部品
     ├── app_style.dart            配色などの共通スタイル値（AppColors）
     ├── format.dart                距離・面積の表示用フォーマット関数
     ├── control_panel.dart        スタート/ストップ・輪を閉じるボタン
-    └── territory_map.dart        flutter_map本体（軌跡・領土ポリゴンの描画）
+    ├── territory_map.dart        flutter_map本体（軌跡・領土ポリゴンの描画）
+    ├── map_zoom_controls.dart    地図に浮かせるズームコントロール
+    ├── map_camera_animation.dart 地図をアニメーション付きで移動させるヘルパー
+    ├── glow_line_style.dart      軌跡・領土のグロー(光彩)表現
+    ├── territory_gain_toast.dart 領土獲得時の演出トースト
+    └── badge_chip_row.dart       獲得済みバッジのチップ行
 ```
+
+下部ナビゲーションバー（`home_shell.dart`）導入後は、`badge_screen.dart`/
+`history_screen.dart`/`ranking_screen.dart`はタブとして直接埋め込まれる
+（`Navigator.push`では遷移しない）。`history_detail_screen.dart`のような
+「タブの中からさらに1段掘り下げる」画面だけ、従来どおり`Navigator.push`で
+遷移する。
 
 責務の分離ルール:
 - `geo/` はFlutterのimportを持たない（`dart:math` のみに依存する純粋Dart）。

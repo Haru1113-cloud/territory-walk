@@ -20,8 +20,6 @@ import '../widgets/map_camera_animation.dart';
 import '../widgets/map_zoom_controls.dart';
 import '../widgets/territory_gain_toast.dart';
 import '../widgets/territory_map.dart';
-import 'badge_screen.dart';
-import 'history_screen.dart';
 
 class WalkScreen extends StatefulWidget {
   const WalkScreen({super.key});
@@ -169,24 +167,6 @@ class _WalkScreenState extends State<WalkScreen>
             icon: Icons.person_outline,
             tooltip: 'ニックネーム',
             onPressed: _editNickname,
-          ),
-          _AppBarGlassIcon(
-            icon: Icons.emoji_events,
-            tooltip: 'バッジ',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const BadgeScreen()),
-              );
-            },
-          ),
-          _AppBarGlassIcon(
-            icon: Icons.calendar_month,
-            tooltip: '散歩の記録',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const HistoryScreen()),
-              );
-            },
           ),
           const SizedBox(width: 8),
         ],

@@ -230,18 +230,12 @@ class _DistanceHero extends StatelessWidget {
         ),
         Text(
           formatDistance(controller.sessionDistanceMeters),
-          style: TextStyle(
+          style: const TextStyle(
             color: AppColors.trail,
             fontWeight: FontWeight.w800,
             fontSize: 42,
             letterSpacing: 0.01,
             height: 1.2,
-            shadows: [
-              Shadow(
-                color: AppColors.trail.withValues(alpha: 0.7),
-                blurRadius: 18,
-              ),
-            ],
           ),
         ),
         const SizedBox(height: 10),

@@ -19,10 +19,12 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="歩いた軌跡で領土を確定する散歩ゲーム">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F6F3EC">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="テラウォーク">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -31,6 +33,20 @@
 
   <title>テラウォーク</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    アプリ本体(AppColors.background)がペイントされる前や、iOS Safariの
+    弾性スクロール(バウンス)時に、デフォルトの白いbody背景が見えて
+    しまわないよう、あらかじめアプリと同じ背景色を敷いておく。
+  -->
+  <style>
+    html, body {
+      background: #F6F3EC;
+      height: 100%;
+      margin: 0;
+      overscroll-behavior: none;
+    }
+  </style>
 </head>
 <body>
   <!--
