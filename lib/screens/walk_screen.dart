@@ -192,6 +192,7 @@ class _WalkScreenState extends State<WalkScreen>
             bottom: 0,
             child: SafeArea(
               top: false,
+              minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: ControlPanel(onRecenter: _recenterToCurrentLocation),
             ),
           ),

@@ -1,7 +1,10 @@
 // このファイルの役割:
-// スタート/ストップ・輪を閉じる(手動)ボタンと、軌跡・領土・合計面積の
-// ステータス表示を行う操作パネル。画面下部にボトムシート状で固定表示する
+// スタートボタンと、軌跡・領土・合計面積のステータス表示を行う操作パネル。
+// 画面下部に、地図から少し浮かせた1枚のカードとして固定表示する
 // (地図をできるだけ隠さず、親指で操作しやすい位置に置くため)。
+// あえてボトムシート然とした「上端のみ角丸+ドラッグハンドル」にはせず、
+// ドラッグでは閉じない普通のカードだと一目でわかる見た目にしている
+// (ユーザー要望: 下にスクロール/ドラッグできそうに見えるのを避けたい)。
 
 import 'dart:ui';
 
@@ -25,45 +28,30 @@ class ControlPanel extends StatelessWidget {
 
     // 暗い半透明のガラス調パネル。BackdropFilterで背後の地図を
     // ぼかして重ねることで「フロストガラスの上にUIが乗っている」
-    // 見た目にする。
+    // 見た目にする。四辺とも角丸にして、画面に張り付くボトムシートでは
+    // なく独立した1枚のカードに見えるようにする。
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(AppColors.radiusLarge),
-      ),
+      borderRadius: BorderRadius.circular(AppColors.radiusLarge),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.panel,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppColors.radiusLarge),
-            ),
-            boxShadow: [
+            borderRadius: BorderRadius.circular(AppColors.radiusLarge),
+            border: Border.all(color: AppColors.border),
+            boxShadow: const [
               BoxShadow(
-                color: Colors.black45,
-                blurRadius: 24,
-                offset: Offset(0, -4),
+                color: Colors.black26,
+                blurRadius: 20,
+                offset: Offset(0, 8),
               ),
             ],
           ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 「これはボトムシートである」ことを一目で伝えるための
-              // 飾りのドラッグハンドル(実際にドラッグでは閉じない)。
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
               _DistanceHero(controller: controller, onRecenter: onRecenter),
               const SizedBox(height: 12),
               const BadgeChipRow(),
